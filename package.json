@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git@github.com:pixellyte/redux-data-components.git"
   },
   "dependencies": {
     "react": "^16.0.0",
