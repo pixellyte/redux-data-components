@@ -1,0 +1,9 @@
+export const SET_GAME_MODE = 'SET_GAME_MODE';
+export const NEW_GAME = 'NEW_GAME';
+export const REVEAL_CELL = 'REVEAL_CELL';
+export const MARK_CELL = 'MARK_CELL';
+export const QUESTION_CELL = 'QUESTION_CELL';
+export const UNMARK_CELL = 'UNMARK_CELL';
+export const CLOCK_TICK = 'CLOCK_TICK';
+export const CLOCK_START = 'CLOCK_START';
+export const CLOCK_STOP = 'CLOCK_STOP';

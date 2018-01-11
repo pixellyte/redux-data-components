@@ -1,0 +1,94 @@
+.App {
+  text-align: center;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.header > div {
+  flex-shrink: 1;
+  padding: 8px;
+}
+
+.header > div.remaining, .header > div.clock {
+  background-color: black;
+  color: greenyellow;
+  border: 3px inset #CFCFCF;
+  width: 60px;
+  font-size: 16px;
+  line-height: 36px;
+}
+
+.header > div.control {
+  font-size: 24px;
+  border: 3px groove #CFCFCF;
+  width: 36px;
+}
+
+.board {
+  background-color: #CFCFCF;
+  border: 1px outset #CFCFCF;
+  padding: 4px;
+  display: inline-block;
+  margin: auto;
+}
+
+.difficulty {
+  text-align: right;
+  margin-top: 4px;
+}
+
+.difficulty a {
+  font-size: 12px;
+  border: 1px solid gray;
+  padding: 2px 4px;
+  margin-left: 2px;
+  cursor: pointer;
+}
+
+.difficulty a.selected {
+  border-color: yellow;
+  color: yellow;
+  background-color: #666;
+  cursor: default;
+}
+
+table {
+  border: 1px inset #CFCFCF;
+  border-collapse: collapse;
+}
+
+td {
+  background-color: #CFCFCF;
+  width: 24px;
+  height: 24px;
+}
+
+td.exploded {
+  background-color: red;
+}
+
+td.hidden {
+  background-color: #DFDFDF;
+  border: 3px outset #DFDFDF;
+  color: #666666;
+}
+
+td.revealed {
+  background-color: #CFCFCF;
+  border: 1px solid #999;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.adj1 { color: blue; }
+.adj2 { color: green; }
+.adj3 { color: darkorange; }
+.adj4 { color: red; }
+.adj5 { color: purple; }
+.adj6 { color: brown; }
+.adj7 { color: darkslateblue; }
+.adj8 { color: darkslategray; }

@@ -1,0 +1,9 @@
+.git/
+.idea/
+examples/
+karma_html/
+node_modules/
+src/
+tests/
+.travis.yml
+gulpfile.js
