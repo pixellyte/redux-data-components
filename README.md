@@ -230,7 +230,7 @@ middleware:
 
 ```javascript
 import rootReducer from './rootReducer';
-import { middleware as dataComponentMiddleware } from 'redux-data-components'
+import { dataComponentMiddleware } from 'redux-data-components'
 
 const middleware = applyMiddleware(dataComponentMiddleware);
 const store = createStore(
