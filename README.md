@@ -222,6 +222,14 @@ Redux Data Components provide solutions to all these issues and more.
  
 ## Usage
 
+### Installing
+
+Install using npm:
+
+```
+npm i redux-data-components
+```
+
 ### Middleware
 
 Redux Data Components depend on a middleware component.  This middleware enables the lifecycle
