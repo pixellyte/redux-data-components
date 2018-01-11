@@ -1,6 +1,6 @@
 {
   "name": "redux-data-components",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Redux Data Components",
   "main": "lib/index.js",
   "scripts": {
