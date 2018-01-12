@@ -199,10 +199,11 @@ Redux Data Components provide solutions to all these issues and more.
    a standard interface for fetching an external resource.  Extend this component and provide
    a ```fetch()``` method that returns the data from your fetch.  
    
-   AsyncFetchComponent provides three built-in internal reducers:  
+   AsyncFetchComponent provides four built-in internal reducers:  
     - ```data``` contains the data returned from a successful fetch.  
     - ```state``` tracks the load state with a number of values (STALE, REQUESTED, LOADING, ERROR, FRESH).  
     - ```error``` member tracks the error result in case the state becomes ERROR.
+    - ```args``` arguments passed to ```request``` or ```forceReload``` are captured here and passed to ```fetch```.
    
    Using an AsyncFetchComponent is a solution to the problem of writing the same boilerplate 
    action for different endpoints day after day.  Implement the meat of the fetch, and all 

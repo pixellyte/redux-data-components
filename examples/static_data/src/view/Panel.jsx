@@ -3,8 +3,8 @@ import { connect } from 'react-redux';
 
 class Panel extends Component {
     componentDidMount() {
-        this.props.shared.request();
-        this.props.own.request();
+        this.props.shared.request("because");
+        this.props.own.request("why not");
     }
 
     isLoading() {

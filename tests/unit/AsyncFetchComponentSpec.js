@@ -63,22 +63,26 @@ describe('AsyncFetchComponent', () => {
             const { component } = setup();
             const newComponent = component.reduce(component, {
                 type: ActionType.DATA_COMPONENT_REQUEST,
-                component: 'SomeOtherComponent'
+                component: 'SomeOtherComponent',
+                args: ['arg', 0]
             })
             expect(newComponent.data).toEqual('NOTHING YET!');
             expect(newComponent.state).toEqual('STALE');
             expect(newComponent.error).toBeNull();
+            expect(newComponent.args).toEqual([]);
         })
 
         it('should update the state', () => {
             const { component } = setup();
             const newComponent = component.reduce(component, {
                 type: ActionType.DATA_COMPONENT_REQUEST,
-                component: 'TestFetchComponent'
+                component: 'TestFetchComponent',
+                args: ['arg', 0]
             })
             expect(newComponent.data).toEqual('NOTHING YET!');
             expect(newComponent.state).toEqual('REQUESTED');
             expect(newComponent.error).toBeNull();
+            expect(newComponent.args).toEqual(['arg', 0]);
         })
     })
 
@@ -213,7 +217,8 @@ describe('AsyncFetchComponent', () => {
                 component.request();
                 expect(dispatchSpy).toHaveBeenCalledWith({
                     type: ActionType.DATA_COMPONENT_REQUEST,
-                    component: 'TestFetchComponent'
+                    component: 'TestFetchComponent',
+                    args: []
                 })
             })
         })
@@ -250,7 +255,8 @@ describe('AsyncFetchComponent', () => {
                 })
                 expect(dispatchSpy).toHaveBeenCalledWith({
                     type: ActionType.DATA_COMPONENT_REQUEST,
-                    component: 'TestFetchComponent'
+                    component: 'TestFetchComponent',
+                    args: []
                 })
             })
         })
@@ -329,6 +335,26 @@ describe('AsyncFetchComponent', () => {
             Promise.resolve().then(() => {
                 component.doDataLoad();
             }).then(() => {
+                expect(dispatchSpy).toHaveBeenCalledWith({
+                    type: ActionType.DATA_COMPONENT_LOADING,
+                    component: 'TestFetchComponent'
+                });
+            }).then(() => {
+                expect(dispatchSpy).toHaveBeenCalledWith({
+                    type: ActionType.DATA_COMPONENT_RESPONSE,
+                    component: 'TestFetchComponent',
+                    data: 'RESULT!'
+                })
+            }).then(done)
+        })
+
+        it('should pass arguments to fetch', (done) => {
+            const { component, dispatchSpy } = setup();
+            component.args = ['arg', 0];
+            Promise.resolve().then(() => {
+                component.doDataLoad();
+            }).then(() => {
+                expect(component.fetch).toHaveBeenCalledWith('arg', 0);
                 expect(dispatchSpy).toHaveBeenCalledWith({
                     type: ActionType.DATA_COMPONENT_LOADING,
                     component: 'TestFetchComponent'

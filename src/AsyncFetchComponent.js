@@ -10,7 +10,7 @@ export default class AsyncFetchComponent extends DataComponent {
                 type: ActionType.DATA_COMPONENT_LOADING,
                 component: this.componentIdentifier()
             });
-            const data = this.fetch();
+            const data = this.fetch(...this.args);
             resolve(data);
         });
 
@@ -65,7 +65,8 @@ export default class AsyncFetchComponent extends DataComponent {
         return {
             ...super.classReducers(),
             state: this.reduceDataState,
-            error: this.reduceDataError
+            error: this.reduceDataError,
+            args: this.reduceFetchArgs
         }
     }
 
@@ -116,14 +117,24 @@ export default class AsyncFetchComponent extends DataComponent {
         }
     }
 
+    reduceFetchArgs(previousArgs = [], action) {
+        switch(action.type) {
+            case ActionType.DATA_COMPONENT_REQUEST:
+                return this.isTargetFor(action) ? action.args : previousArgs;
+            default:
+                return previousArgs;
+        }
+    }
+
     // One or more components can call request to indicate a need
     // for fresh data.  Only one fetch will happen no matter how many
     // components request the data, so it is possible but not necessary
     // to check the value of .state before requesting.
-    request() {
+    request(...args) {
         this.props.dispatch({
             type: ActionType.DATA_COMPONENT_REQUEST,
-            component: this.componentIdentifier()
+            component: this.componentIdentifier(),
+            args
         });
     }
 
@@ -144,14 +155,15 @@ export default class AsyncFetchComponent extends DataComponent {
     // current state.  As with .request(), any number of calls to
     // .forceReload (within the current render cycle) will trigger
     // only a single load.
-    forceReload() {
+    forceReload(...args) {
         this.props.dispatch({
             type: ActionType.DATA_COMPONENT_INVALIDATE,
             component: this.componentIdentifier()
         });
         this.props.dispatch({
             type: ActionType.DATA_COMPONENT_REQUEST,
-            component: this.componentIdentifier()
+            component: this.componentIdentifier(),
+            args
         });
     }
 
