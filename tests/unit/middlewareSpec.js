@@ -29,6 +29,7 @@ describe('middleware', () => {
         componentDidReset() {
         }
     }
+    TestComponent.DATA_COMPONENT = 'TestComponent';
 
     function setup() {
         const mock = new TestComponent();

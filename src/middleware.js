@@ -2,7 +2,7 @@ import DataComponent from "./DataComponent";
 import * as ActionType from './constants/actionTypes'
 
 function isDataComponent(item) {
-    return (item instanceof DataComponent);
+    return item && item.constructor && item.constructor.hasOwnProperty('DATA_COMPONENT');
 }
 
 function mapKey(componentPath) {
@@ -14,7 +14,7 @@ function scanDataComponents(state, dispatch, path = [], f = _ => _) {
     const dataKeys = isDataComponent(state) ? Object.keys(state.classReducers()) : Object.keys(state);
     dataKeys.forEach((key) => {
         const componentPath = [...path, key];
-        if (state[key] instanceof DataComponent) {
+        if (isDataComponent(state[key])) {
             state[key].props = {dispatch, path: componentPath};
             f(state[key], componentPath);
             result[mapKey(componentPath)] = state[key];

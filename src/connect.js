@@ -1,5 +1,6 @@
 function createConnect() {
     return (reducerClass) => {
+        reducerClass.DATA_COMPONENT = reducerClass.name;
 
         // Only generate a new instance if the class reducer returns updated data.
         function instanceReducer(oldInstance, action, classOptions) {
