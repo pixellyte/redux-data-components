@@ -35,14 +35,31 @@ function callEventChain(thisArg, object, method, ...args) {
     }
 }
 
+function setReducerCache(obj, cache) {
+    obj._getReductionResult = cache.fetch.bind(cache, obj.componentIdentifier());
+    obj._setReductionResult = cache.store.bind(cache, obj.componentIdentifier());
+}
+
+class Cache {
+    constructor() {
+        this.reset()
+    }
+    reset() { this.cache = {} }
+    store(name, data) { this.cache[name] = data }
+    fetch(name) { return this.cache[name] }
+}
+
 export default store => {
+    const cache = new Cache()
     const {dispatch, getState} = store;
     let dataTree = scanDataComponents(getState(), dispatch, [], (obj) => {
+        setReducerCache(obj, cache)
         Promise.resolve().then(callEventChain(obj, obj, 'componentDidMount'));
     });
     return next => action => {
         const nextAction = next(action);
         dataTree = scanDataComponents(getState(), dispatch, [], (obj, path) => {
+            setReducerCache(obj, cache)
             const oldInstance = dataTree[mapKey(path)];
             if (oldInstance !== obj) {
                 let updateReason = 'UPDATE';
@@ -65,6 +82,7 @@ export default store => {
                     });
             }
         });
+        cache.reset();
         return nextAction
     }
 }

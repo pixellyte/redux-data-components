@@ -34,25 +34,34 @@ export default class DataComponent {
         const reducers = this.classReducers();
         const context = new ReducerContext(this, classOptions);
         const fingerprint = context.fingerprint();
-        const newData = Object.keys(reducers).reduce((result, key) => {
-            const reducer = reducers[key].bind(context);
-            const previousDataItem = getIn(previous, [key]);
-            let newDataItem = previousDataItem;
-            if(action.type === ActionType.DATA_COMPONENT_RESET && context.isTargetFor(action)) {
-                newDataItem = reducer(undefined, {});
-            } else {
-                newDataItem = reducer(previousDataItem, action);
-            }
-            if(fingerprint !== context.fingerprint()) {
-                throw new Error(`Illegal side-effect in reducer for ${key} in ${this.constructor.name}.  Do not modify "this" in a reducer.`);
-            }
-            result[key] = newDataItem;
-            if (Object.keys(context).length)
-            if(newDataItem !== previousDataItem) {
-                updated = true
-            }
-            return result;
-        }, {});
+        const reduction = this._getReductionResult && this._getReductionResult();
+        let newData;
+
+        if(reduction !== undefined) {
+            newData = reduction;
+            updated = (newData !== 0);
+        } else {
+            newData = Object.keys(reducers).reduce((result, key) => {
+                const reducer = reducers[key].bind(context);
+                const previousDataItem = getIn(previous, [key]);
+                let newDataItem = previousDataItem;
+                if(action.type === ActionType.DATA_COMPONENT_RESET && context.isTargetFor(action)) {
+                    newDataItem = reducer(undefined, {});
+                } else {
+                    newDataItem = reducer(previousDataItem, action);
+                }
+                if(fingerprint !== context.fingerprint()) {
+                    throw new Error(`Illegal side-effect in reducer for ${key} in ${this.constructor.name}.  Do not modify "this" in a reducer.`);
+                }
+                result[key] = newDataItem;
+                if (Object.keys(context).length)
+                    if(newDataItem !== previousDataItem) {
+                        updated = true
+                    }
+                return result;
+            }, {});
+            this._setReductionResult && this._setReductionResult(updated ? newData : 0);
+        }
 
         if((previous && updated) || action.type === 'persist/REHYDRATE') {
             const newInstance = new this.constructor(classOptions);

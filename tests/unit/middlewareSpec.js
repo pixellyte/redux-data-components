@@ -4,6 +4,10 @@ import {DataComponent} from '../../src';
 describe('middleware', () => {
 
     class TestComponent extends DataComponent {
+        componentIdentifier() {
+            return 'testComponent'
+        }
+
         defaultState() {
             return 0;
         }

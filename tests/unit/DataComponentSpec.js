@@ -91,6 +91,38 @@ describe('DataComponent', () => {
 
     describe('reduce', () => {
 
+        it('skips reducer for a cached result', () => {
+            const { initialDerived } = setup();
+            initialDerived._getReductionResult = () => ({ data: 'SOMETHING', mine: 'WHATEVER' });
+            const dataReducer = jasmine.createSpy('dataReducer').and.returnValue("DATA");
+            const myReducer = jasmine.createSpy('myReducer').and.returnValue("MINE");
+            initialDerived.classReducers = () => ({
+                data: dataReducer,
+                mine: myReducer
+            });
+            const result = initialDerived.reduce(initialDerived, { type: 'TEST' });
+            expect(dataReducer).not.toHaveBeenCalled();
+            expect(myReducer).not.toHaveBeenCalled();
+            expect(result).not.toEqual(initialDerived);
+            expect(result.data).toEqual('SOMETHING');
+            expect(result.mine).toEqual('WHATEVER');
+        })
+
+        it('skips reducer for a no-update cached result', () => {
+            const { initialDerived } = setup();
+            initialDerived._getReductionResult = () => 0;
+            const dataReducer = jasmine.createSpy('dataReducer').and.returnValue("DATA");
+            const myReducer = jasmine.createSpy('myReducer').and.returnValue("MINE");
+            initialDerived.classReducers = () => ({
+                data: dataReducer,
+                mine: myReducer
+            });
+            const result = initialDerived.reduce(initialDerived, { type: 'TEST' });
+            expect(dataReducer).not.toHaveBeenCalled();
+            expect(myReducer).not.toHaveBeenCalled();
+            expect(result).toEqual(initialDerived);
+        })
+
         it('runs all class reducers', () => {
             const { initialDerived } = setup();
             const dataReducer = jasmine.createSpy('dataReducer').and.returnValue("DATA");
