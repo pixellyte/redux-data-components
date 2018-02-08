@@ -273,8 +273,12 @@ import { DataComponent, connect } from 'redux-data-components'
 class MyComponent extends DataComponent {
 }
 
-export default connect(MyComponent);
+export default connect("MyComponent", MyComponent);
 ```
+
+The first argument is a default component identifier.  Originally this was inferred
+from the class name, but minification could mangle these identifiers in application-breaking ways.
+Old syntax is still accepted with a warning.
 
 #### Option: Use the default data reducer
 
@@ -302,7 +306,7 @@ class MyComponent extends DataComponent {
     }
 }
 
-export default connect(MyComponent);
+export default connect("MyComponent", MyComponent);
 ```
 
 Notice that ```reduceData``` is an inherited method we are overriding.  This means that, for
@@ -337,7 +341,7 @@ class MyComponent extends DataComponent {
     }
 }
 
-export default connect(MyComponent);
+export default connect("MyComponent", MyComponent);
 ```
 
 #### Option: Add additional reducers
@@ -383,6 +387,8 @@ class MyComponent extends DataComponent {
         }
     }
 }
+
+export default connect("MyComponent", MyComponent);
 ```
 
 #### Accessing reduced data
@@ -502,6 +508,8 @@ class MyComponent extends DataComponent {
         }
     }
 }
+
+export default connect("MyComponent", MyComponent);
 ```
 
 #### Define actions
@@ -572,6 +580,8 @@ class MyComponent extends DataComponent {
         this.props.dispatch({ type: 'BECAME_ODD' });
     }
 }
+
+export default connect("MyComponent", MyComponent);
 ```
 
 The base ```DataComponent``` class provides one built-in action method, 
@@ -667,6 +677,8 @@ class MyComponent extends DataComponent {
         });
     }
 }
+
+export default connect("MyComponent", MyComponent);
 ```
 The result of this is that every instance of MyComponent will respond to the
 same actions, so they will always have the same value.  We can, of course, 
