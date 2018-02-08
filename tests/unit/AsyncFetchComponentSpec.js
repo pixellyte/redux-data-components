@@ -26,6 +26,8 @@ describe('AsyncFetchComponent', () => {
     }
 
     function setup() {
+        TestFetchComponent.DATA_COMPONENT = 'TestFetchComponent';
+        ErrorFetchComponent.DATA_COMPONENT = 'ErrorFetchComponent';
         const dispatchSpy = jasmine.createSpy('dispatch');
         const component = makeComponent();
         let errorComponent = new ErrorFetchComponent();

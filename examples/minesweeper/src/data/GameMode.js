@@ -74,4 +74,4 @@ class GameMode extends DataComponent {
     }
 }
 
-export default connect(GameMode);
+export default connect("GameMode", GameMode);

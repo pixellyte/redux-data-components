@@ -1,6 +1,16 @@
 function createConnect() {
-    return (reducerClass) => {
-        reducerClass.DATA_COMPONENT = reducerClass.name;
+    return (defaultComponentId, reducerClass) => {
+        if(typeof reducerClass === 'undefined' && typeof defaultId !== 'string') {
+            console.warn(
+`Single-argument connect(Component) is deprecated and may not work correctly when minified.  Please convert to
+ connect("defaultComponentId", Component) for production code.  Suggest connect("MyComponent", MyComponent) for
+ consistency with existing behavior.`
+            );
+            reducerClass = defaultComponentId;
+            defaultComponentId = reducerClass.name;
+        }
+
+        reducerClass.DATA_COMPONENT = defaultComponentId;
 
         // Only generate a new instance if the class reducer returns updated data.
         function instanceReducer(oldInstance, action, classOptions) {

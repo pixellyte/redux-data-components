@@ -26,6 +26,7 @@ describe('DataComponent', () => {
         const initialBase = bootstrapBase.reduce(bootstrapBase, {});
         const bootstrapDerived = new DerivedComponent();
         const initialDerived = bootstrapDerived.reduce(bootstrapDerived, {});
+        DerivedComponent.DATA_COMPONENT = 'default-component-id';
         initialBase.props = { dispatch: dispatchSpy };
         initialDerived.props = { dispatch: dispatchSpy };
         return { bootstrapBase, bootstrapDerived, initialBase, initialDerived, dispatchSpy };
@@ -39,10 +40,10 @@ describe('DataComponent', () => {
     })
 
     describe('componentIdentifier', () => {
-        it('defaults to component name', () => {
+        it('defaults to static DATA_COMPONENT value', () => {
             const { initialBase, initialDerived } = setup();
-            expect(initialBase.componentIdentifier()).toEqual('DataComponent');
-            expect(initialDerived.componentIdentifier()).toEqual('DerivedComponent');
+            expect(initialBase.componentIdentifier()).toBeUndefined();
+            expect(initialDerived.componentIdentifier()).toEqual('default-component-id');
         })
 
         it('allows override using classOptions', () => {
@@ -80,11 +81,11 @@ describe('DataComponent', () => {
 
     describe('reset', () => {
         it('dispatches a reset action', () => {
-            const { initialBase, dispatchSpy } = setup();
-            initialBase.reset();
+            const { initialDerived, dispatchSpy } = setup();
+            initialDerived.reset();
             expect(dispatchSpy).toHaveBeenCalledWith({
                 type: ActionType.DATA_COMPONENT_RESET,
-                component: 'DataComponent'
+                component: 'default-component-id'
             });
         })
     })
@@ -168,7 +169,7 @@ describe('DataComponent', () => {
             });
             initialDerived.reduce(initialDerived, {
                 type: ActionType.DATA_COMPONENT_RESET,
-                component: 'DerivedComponent'
+                component: 'default-component-id'
             });
             expect(dataReducer).toHaveBeenCalledWith(undefined, {});
             expect(myReducer).toHaveBeenCalledWith(undefined, {});

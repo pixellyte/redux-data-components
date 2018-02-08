@@ -51,4 +51,4 @@ class GameClock extends DataComponent {
     }
 }
 
-export default connect(GameClock);
+export default connect("GameClock", GameClock);
