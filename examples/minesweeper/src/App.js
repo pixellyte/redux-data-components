@@ -29,7 +29,7 @@ class App extends Component {
         const time = board.clock.data > 999 ? '∞' : board.clock.data;
         return (
             <div className="header">
-                <div className="remaining">{board.minesRemaining()}</div>
+                <div className="remaining">{board.isGameWon() ? 0 : board.minesRemaining()}</div>
                 <div className="control" onClick={() => board.newGame()}>{this.renderResetIcon()}</div>
                 <div className="clock">{time}</div>
             </div>
@@ -65,7 +65,7 @@ class App extends Component {
         let cellState = 'hidden';
         if (board.isExploded(cell)) cellState = 'exploded';
         else if (board.isRevealed(cell)) cellState = 'revealed';
-        if(board.isMarked(cell)) cellContent = '🚩';
+        if(board.isMarked(cell) || (board.isGameWon() && board.isMine(cell))) cellContent = '🚩';
         else if(board.isQuestioned(cell)) cellContent = '❓';
         else if(board.isGameLost() && board.isMine(cell)) cellContent = '💣';
         else if(!board.isRevealed(cell)) cellContent = '';
