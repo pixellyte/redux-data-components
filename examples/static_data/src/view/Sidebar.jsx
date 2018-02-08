@@ -9,7 +9,7 @@ class Sidebar extends Component {
                 <ul>
                     {Object.keys(this.props)
                         .filter(key => this.props[key].state === 'LOADING')
-                        .map(key => <li>{key}</li>)}
+                        .map(key => <li key={key}>{key}</li>)}
                 </ul>
             </div>
         )

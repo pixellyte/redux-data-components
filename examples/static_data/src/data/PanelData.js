@@ -35,4 +35,4 @@ class PanelData extends AsyncFetchComponent {
     }
 }
 
-export default connect(PanelData);
+export default connect("PanelData", PanelData);

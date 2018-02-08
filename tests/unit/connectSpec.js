@@ -34,4 +34,22 @@ describe('connect', () => {
             expect(e.message).toEqual('MOCK FAILURE');
         }
     })
+
+    describe('minification support', () => {
+
+        it('accepts original syntax, with a warning', () => {
+            spyOn(console, 'warn')
+            const reducer = connect(MockComponent);
+            expect(console.warn).toHaveBeenCalled();
+            expect(MockComponent.DATA_COMPONENT).toEqual("MockComponent");
+        })
+
+        it('accepts new syntax, without a warning', () => {
+            spyOn(console, 'warn')
+            const reducer = connect('default-component-id', MockComponent);
+            expect(console.warn).not.toHaveBeenCalled();
+            expect(MockComponent.DATA_COMPONENT).toEqual("default-component-id");
+        })
+
+    })
 })

@@ -18,7 +18,7 @@ export default class DataComponent {
     // done so that multiple mounted instances of the same class can
     // operate independent of one another.
     componentIdentifier() {
-        return this.classOptions.id || this.constructor.name
+        return this.classOptions.id || this.constructor.DATA_COMPONENT
     }
 
     applyData(data) {

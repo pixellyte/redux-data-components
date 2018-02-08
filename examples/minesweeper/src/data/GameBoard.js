@@ -198,4 +198,4 @@ class GameBoard extends DataComponent {
     }
 }
 
-export default connect(GameBoard);
+export default connect("GameBoard", GameBoard);
