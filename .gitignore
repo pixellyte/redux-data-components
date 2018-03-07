@@ -2,3 +2,4 @@
 **/node_modules/
 karma_html/
 lib/
+package-lock.json

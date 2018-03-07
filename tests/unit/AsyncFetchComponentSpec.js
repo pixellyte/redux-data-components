@@ -1,5 +1,5 @@
 import AsyncFetchComponent from '../../src/AsyncFetchComponent';
-import * as ActionType from "../../lib/constants/actionTypes";
+import * as ActionType from "../../src/constants/actionTypes";
 
 describe('AsyncFetchComponent', () => {
 
