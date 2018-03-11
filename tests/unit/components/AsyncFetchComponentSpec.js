@@ -1,5 +1,5 @@
-import AsyncFetchComponent from '../../src/AsyncFetchComponent';
-import * as ActionType from "../../lib/constants/actionTypes";
+import AsyncFetchComponent from '../../../src/components/AsyncFetchComponent';
+import * as ActionType from "../../../lib/constants/actionTypes";
 
 describe('AsyncFetchComponent', () => {
 
@@ -21,7 +21,7 @@ describe('AsyncFetchComponent', () => {
 
     function makeComponent() {
         let component = new TestFetchComponent();
-        component = component.reduce(component, {});
+        component = component.reduce({});
         return component;
     }
 
@@ -31,7 +31,7 @@ describe('AsyncFetchComponent', () => {
         const dispatchSpy = jasmine.createSpy('dispatch');
         const component = makeComponent();
         let errorComponent = new ErrorFetchComponent();
-        errorComponent = errorComponent.reduce(errorComponent, {});
+        errorComponent = errorComponent.reduce({});
         component.props = { dispatch: dispatchSpy };
         errorComponent.props = { dispatch: dispatchSpy };
         spyOn(component, 'fetch').and.callThrough();
@@ -52,7 +52,7 @@ describe('AsyncFetchComponent', () => {
             component.data = 'A';
             component.state = 'B';
             component.error = 'C';
-            const newComponent = component.reduce(component, { type: 'UNKNOWN' })
+            const newComponent = component.reduce({ type: 'UNKNOWN' })
             expect(newComponent.data).toEqual('A');
             expect(newComponent.state).toEqual('B');
             expect(newComponent.error).toEqual('C');
@@ -63,7 +63,7 @@ describe('AsyncFetchComponent', () => {
     describe('receiving DATA_COMPONENT_REQUEST', () => {
         it('should ignore mistargeted actions', () => {
             const { component } = setup();
-            const newComponent = component.reduce(component, {
+            const newComponent = component.reduce({
                 type: ActionType.DATA_COMPONENT_REQUEST,
                 component: 'SomeOtherComponent',
                 args: ['arg', 0]
@@ -76,7 +76,7 @@ describe('AsyncFetchComponent', () => {
 
         it('should update the state', () => {
             const { component } = setup();
-            const newComponent = component.reduce(component, {
+            const newComponent = component.reduce({
                 type: ActionType.DATA_COMPONENT_REQUEST,
                 component: 'TestFetchComponent',
                 args: ['arg', 0]
@@ -91,7 +91,7 @@ describe('AsyncFetchComponent', () => {
     describe('receiving DATA_COMPONENT_LOADING', () => {
         it('should ignore mistargeted actions', () => {
             const { component } = setup();
-            const newComponent = component.reduce(component, {
+            const newComponent = component.reduce({
                 type: ActionType.DATA_COMPONENT_LOADING,
                 component: 'SomeOtherComponent'
             })
@@ -102,7 +102,7 @@ describe('AsyncFetchComponent', () => {
 
         it('should update the state', () => {
             const { component } = setup();
-            const newComponent = component.reduce(component, {
+            const newComponent = component.reduce({
                 type: ActionType.DATA_COMPONENT_LOADING,
                 component: 'TestFetchComponent'
             })
@@ -115,7 +115,7 @@ describe('AsyncFetchComponent', () => {
     describe('receiving DATA_COMPONENT_RESPONSE', () => {
         it('should ignore mistargeted actions', () => {
             const { component } = setup();
-            const newComponent = component.reduce(component, {
+            const newComponent = component.reduce({
                 type: ActionType.DATA_COMPONENT_RESPONSE,
                 component: 'SomeOtherComponent',
                 data: "HERE IS YOUR DATA!"
@@ -127,7 +127,7 @@ describe('AsyncFetchComponent', () => {
 
         it('should update the state', () => {
             const { component } = setup();
-            const newComponent = component.reduce(component, {
+            const newComponent = component.reduce({
                 type: ActionType.DATA_COMPONENT_RESPONSE,
                 component: 'TestFetchComponent',
                 data: "HERE IS YOUR DATA!"
@@ -143,7 +143,7 @@ describe('AsyncFetchComponent', () => {
             const { component } = setup();
             component.data = 'PREVIOUS DATA!';
             component.state = 'FRESH';
-            const newComponent = component.reduce(component, {
+            const newComponent = component.reduce({
                 type: ActionType.DATA_COMPONENT_INVALIDATE,
                 component: 'SomeOtherComponent'
             })
@@ -156,7 +156,7 @@ describe('AsyncFetchComponent', () => {
             const { component } = setup();
             component.data = 'PREVIOUS DATA!';
             component.state = 'FRESH';
-            const newComponent = component.reduce(component, {
+            const newComponent = component.reduce({
                 type: ActionType.DATA_COMPONENT_INVALIDATE,
                 component: 'TestFetchComponent'
             })
@@ -169,7 +169,7 @@ describe('AsyncFetchComponent', () => {
             const { component } = setup();
             component.data = 'PREVIOUS DATA!';
             component.state = 'FRESH';
-            const newComponent = component.reduce(component, {
+            const newComponent = component.reduce({
                 type: ActionType.DATA_COMPONENT_INVALIDATE,
                 component: 'TestFetchComponent',
                 reset: true
@@ -186,7 +186,7 @@ describe('AsyncFetchComponent', () => {
             const { component } = setup();
             component.data = 'PREVIOUS DATA!';
             component.state = 'STALE';
-            const newComponent = component.reduce(component, {
+            const newComponent = component.reduce({
                 type: ActionType.DATA_COMPONENT_ERROR,
                 component: 'SomeOtherComponent',
                 error: 'SOMETHING WENT WRONG'
@@ -200,7 +200,7 @@ describe('AsyncFetchComponent', () => {
             const { component } = setup();
             component.data = 'PREVIOUS DATA!';
             component.state = 'STALE';
-            const newComponent = component.reduce(component, {
+            const newComponent = component.reduce({
                 type: ActionType.DATA_COMPONENT_ERROR,
                 component: 'TestFetchComponent',
                 error: 'SOMETHING WENT WRONG'

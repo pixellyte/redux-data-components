@@ -1,10 +1,9 @@
-import getIn from "./util/getIn";
+import getIn from "../util/getIn";
 
 export default class ReducerContext {
     constructor(component, classOptions) {
         component.classOptions = classOptions;
         this.id = component.componentIdentifier();
-        this.path = getIn(component, ['props', 'path']) || [];
         this.classOptions = {...component.classOptions};
         this.constructor.prototype.__proto__ = component.__proto__; // Makes super work in reducers.
     }
@@ -14,7 +13,7 @@ export default class ReducerContext {
     }
 
     rehydrateItem(payload, item) {
-        return getIn(payload, [...this.path, item]);
+        return getIn(payload, [item]);
     }
 
     fingerprint() {

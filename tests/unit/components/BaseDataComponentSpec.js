@@ -1,10 +1,18 @@
-import DataComponent from '../../src/DataComponent'
-import * as ActionType from '../../src/constants/actionTypes'
+import * as ActionType from '../../../src/constants/actionTypes';
+import BaseDataComponent from "../../../src/components/BaseDataComponent";
+import { Reducer } from '../../../src/decorators';
 
-describe('DataComponent', () => {
+describe('BaseDataComponent', () => {
 
-    class DerivedComponent extends DataComponent {
+    class BaseComponent extends BaseDataComponent {
         defaultState() { return 0; }
+        @Reducer('data')
+        dataReducer(state = 0, action) {
+            return state;
+        }
+    }
+
+    class DerivedComponent extends BaseComponent {
         classReducers() {
             return {
                 ...super.classReducers(),
@@ -13,7 +21,8 @@ describe('DataComponent', () => {
         }
     }
 
-    class SideEffectComponent extends DataComponent {
+    class SideEffectComponent extends BaseDataComponent {
+        @Reducer('data')
         reduceData() {
             this.side_effect = "BAD DEVELOPER!  NO COOKIE FOR YOU!";
             return 0;
@@ -22,22 +31,13 @@ describe('DataComponent', () => {
 
     function setup() {
         const dispatchSpy = jasmine.createSpy('dispatch');
-        const bootstrapBase = new DataComponent()
-        const initialBase = bootstrapBase.reduce(bootstrapBase, {});
-        const bootstrapDerived = new DerivedComponent();
-        const initialDerived = bootstrapDerived.reduce(bootstrapDerived, {});
+        const bootstrapBase = new BaseComponent(dispatchSpy, {})
+        const initialBase = bootstrapBase.reduce({});
+        const bootstrapDerived = new DerivedComponent(dispatchSpy, {});
+        const initialDerived = bootstrapDerived.reduce({});
         DerivedComponent.DATA_COMPONENT = 'default-component-id';
-        initialBase.props = { dispatch: dispatchSpy };
-        initialDerived.props = { dispatch: dispatchSpy };
         return { bootstrapBase, bootstrapDerived, initialBase, initialDerived, dispatchSpy };
     }
-
-    describe('construction', () => {
-        it('can bootstrap an initial instance', () => {
-            const { initialBase } = setup();
-            expect(initialBase.data).toEqual(initialBase.defaultState());
-        })
-    })
 
     describe('componentIdentifier', () => {
         it('defaults to static DATA_COMPONENT value', () => {
@@ -47,8 +47,8 @@ describe('DataComponent', () => {
         })
 
         it('allows override using classOptions', () => {
-            const { bootstrapBase } = setup();
-            const instance = bootstrapBase.reduce(bootstrapBase, {}, { id: 'TEST' });
+            const { dispatchSpy } = setup();
+            const instance = new DerivedComponent(dispatchSpy, { id: 'TEST' })
             expect(instance.componentIdentifier()).toEqual('TEST');
         })
     })
@@ -62,67 +62,15 @@ describe('DataComponent', () => {
         })
     })
 
-    describe('defaultState', () => {
-        it('has heritable default state', () => {
-            const { initialBase, initialDerived } = setup();
-            expect(initialBase.data).toEqual(null);
-            expect(initialDerived.data).toEqual(0);
-        })
-    })
-
     describe('classReducers', () => {
         it('provides extensible class reducers', () => {
-            const { initialBase, initialDerived } = setup();
-            expect(Object.keys(initialBase.classReducers())).toEqual(['data']);
+            const { initialDerived } = setup();
             expect(Object.keys(initialDerived.classReducers())).toEqual(['data', 'mine']);
             expect(initialDerived.mine).toEqual('foo');
         })
     })
 
-    describe('reset', () => {
-        it('dispatches a reset action', () => {
-            const { initialDerived, dispatchSpy } = setup();
-            initialDerived.reset();
-            expect(dispatchSpy).toHaveBeenCalledWith({
-                type: ActionType.DATA_COMPONENT_RESET,
-                component: 'default-component-id'
-            });
-        })
-    })
-
     describe('reduce', () => {
-
-        it('skips reducer for a cached result', () => {
-            const { initialDerived } = setup();
-            initialDerived._getReductionResult = () => ({ data: 'SOMETHING', mine: 'WHATEVER' });
-            const dataReducer = jasmine.createSpy('dataReducer').and.returnValue("DATA");
-            const myReducer = jasmine.createSpy('myReducer').and.returnValue("MINE");
-            initialDerived.classReducers = () => ({
-                data: dataReducer,
-                mine: myReducer
-            });
-            const result = initialDerived.reduce(initialDerived, { type: 'TEST' });
-            expect(dataReducer).not.toHaveBeenCalled();
-            expect(myReducer).not.toHaveBeenCalled();
-            expect(result).not.toEqual(initialDerived);
-            expect(result.data).toEqual('SOMETHING');
-            expect(result.mine).toEqual('WHATEVER');
-        })
-
-        it('skips reducer for a no-update cached result', () => {
-            const { initialDerived } = setup();
-            initialDerived._getReductionResult = () => 0;
-            const dataReducer = jasmine.createSpy('dataReducer').and.returnValue("DATA");
-            const myReducer = jasmine.createSpy('myReducer').and.returnValue("MINE");
-            initialDerived.classReducers = () => ({
-                data: dataReducer,
-                mine: myReducer
-            });
-            const result = initialDerived.reduce(initialDerived, { type: 'TEST' });
-            expect(dataReducer).not.toHaveBeenCalled();
-            expect(myReducer).not.toHaveBeenCalled();
-            expect(result).toEqual(initialDerived);
-        })
 
         it('runs all class reducers', () => {
             const { initialDerived } = setup();
@@ -132,7 +80,7 @@ describe('DataComponent', () => {
                 data: dataReducer,
                 mine: myReducer
             });
-            const result = initialDerived.reduce(initialDerived, { type: 'TEST' });
+            const result = initialDerived.reduce({ type: 'TEST' });
             expect(dataReducer).toHaveBeenCalledWith(0, { type: 'TEST' });
             expect(myReducer).toHaveBeenCalledWith('foo', { type: 'TEST' });
             expect(result.data).toEqual("DATA");
@@ -145,7 +93,7 @@ describe('DataComponent', () => {
                 data: _ => _,
                 mine: _ => _
             });
-            const result = initialDerived.reduce(initialDerived, { type: 'TEST' });
+            const result = initialDerived.reduce({ type: 'TEST' });
             expect(result).toEqual(initialDerived);
         })
 
@@ -155,7 +103,7 @@ describe('DataComponent', () => {
                 data: _ => "NEW VALUE",
                 mine: _ => _
             });
-            const result = initialDerived.reduce(initialDerived, { type: 'TEST' });
+            const result = initialDerived.reduce({ type: 'TEST' });
             expect(result).not.toEqual(initialDerived);
         })
 
@@ -167,7 +115,7 @@ describe('DataComponent', () => {
                 data: dataReducer,
                 mine: myReducer
             });
-            initialDerived.reduce(initialDerived, {
+            initialDerived.reduce({
                 type: ActionType.DATA_COMPONENT_RESET,
                 component: 'default-component-id'
             });
@@ -178,7 +126,7 @@ describe('DataComponent', () => {
         it('rejects reducers with attempted side-effects', () => {
             const bootstrapSideEffect = new SideEffectComponent();
             try {
-                bootstrapSideEffect.reduce(bootstrapSideEffect, {});
+                bootstrapSideEffect.reduce({});
                 fail('did not throw an error');
             } catch(e) {
                 expect(e.message).toEqual('Illegal side-effect in reducer for data in SideEffectComponent.  Do not modify "this" in a reducer.');
@@ -191,17 +139,16 @@ describe('DataComponent', () => {
             initialBase.classReducers = () => ({
                 data: _ => "NEW VALUE"
             });
-            const newBase = initialBase.reduce(initialBase, { type: 'TEST' });
+            const newBase = initialBase.reduce({ type: 'TEST' });
             expect(newBase.updated_at).not.toEqual(initialBase.updated_at);
         })
 
         it('retains updated_at property on rehydrate', () => {
             const { initialBase } = setup();
             initialBase.updated_at = 123;
-            initialBase.props.path = ['base'];
-            const newBase = initialBase.reduce(initialBase, {
+            const newBase = initialBase.reduce({
                 type: 'persist/REHYDRATE',
-                payload: { base: { data: 7, updated_at: 456 } }
+                payload: { BaseComponent: { data: 7, updated_at: 456 } }
             });
             expect(newBase.data).toEqual(7);
             expect(newBase.updated_at).toEqual(456);

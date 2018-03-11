@@ -5,11 +5,15 @@ import GameMode from "./GameMode";
 import GameClock from "./GameClock";
 
 class GameBoard extends DataComponent {
+    componentDidMount() {
+        //this.newGame();
+    }
+
     componentDidUpdate(prev, reason) {
         if(reason !== 'REHYDRATE') {
             if (prev.mode !== this.mode) {
                 // Must reset the game when changing mode.
-                this.newGame();
+                //this.newGame();
             } else if (this.isGameOver()) {
                 this.clock.stop();
             } else {
@@ -176,8 +180,6 @@ class GameBoard extends DataComponent {
     unmark(cell) { this.cellAction(cell, ActionType.UNMARK_CELL); }
     mark(cell) { this.cellAction(cell, ActionType.MARK_CELL); }
     question(cell) { this.cellAction(cell, ActionType.QUESTION_CELL); }
-
-
     newGame() {
         const { dispatch } = this.props;
         this.clock.reset();
@@ -188,7 +190,6 @@ class GameBoard extends DataComponent {
             mines: this.mode.mineCount()
         });
     }
-
     toggleMark(cell) {
         if(!this.isGameOver()) {
             if(this.isMarked(cell)) this.question(cell);
