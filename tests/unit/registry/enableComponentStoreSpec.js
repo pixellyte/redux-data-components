@@ -44,10 +44,11 @@ describe('enableComponentStore', () => {
             type: ActionType.DATA_COMPONENT_PROBE,
             methods: {
                 get: jasmine.anything(),
-                register: jasmine.anything(),
-                reference: jasmine.anything(),
                 put: jasmine.anything(),
-                enableReflection: jasmine.anything()
+                reference: jasmine.anything(),
+                register: jasmine.anything(),
+                reflection: jasmine.anything(),
+                rehydrate: jasmine.anything()
             }
         });
         expect(componentStoreActions).toEqual([]);
@@ -188,6 +189,52 @@ describe('enableComponentStore', () => {
                 const referenceB = probeAction.methods.reference('component-id', true);
                 expect(referenceA === referenceB).toEqual(false);
             })
+        })
+
+        describe('reflection', () => {
+
+            it('should reflect component data', () => {
+                const { dispatch } = setup();
+                const probeAction = dispatch.calls.all()
+                    .filter(i => i.args[0].type === ActionType.DATA_COMPONENT_PROBE)[0].args[0];
+                probeAction.methods.register('component-id', TestComponent, {});
+                const newComponent = new TestComponent(dispatch, {});
+                newComponent.data = "UPDATED";
+                newComponent.updated_at = 12345;
+                probeAction.methods.put('component-id', newComponent);
+                expect(probeAction.methods.reflection()).toEqual({
+                    'component-id': { data: 'UPDATED', updated_at: 12345 }
+                })
+            })
+
+        })
+
+        describe('rehydrate', () => {
+
+            it('should dispatch state updates', (done) => {
+                const { dispatch } = setup();
+                const probeAction = dispatch.calls.all()
+                    .filter(i => i.args[0].type === ActionType.DATA_COMPONENT_PROBE)[0].args[0];
+                probeAction.methods.register('component-id', TestComponent, {});
+                const newComponent = new TestComponent(dispatch, {});
+                newComponent.data = "UPDATED";
+                newComponent.updated_at = 12345;
+                probeAction.methods.put('component-id', newComponent);
+
+                const p = probeAction.methods.rehydrate();
+                expect(p instanceof Promise).toEqual(true);
+                Promise.resolve(p).then(() => {
+                    expect(dispatch).toHaveBeenCalledWith({
+                        type: ActionType.DATA_COMPONENT_REFLECTOR_REHYDRATED,
+                        rehydrate: jasmine.anything()
+                    })
+                }).then(() => {
+                    expect(dispatch).toHaveBeenCalledWith({
+                        type: ActionType.DATA_COMPONENT_REFRESH_PROXIES
+                    })
+                }).then(done);
+            })
+
         })
 
     })

@@ -35,6 +35,7 @@ describe('BaseDataComponent', () => {
         const initialBase = bootstrapBase.reduce({});
         const bootstrapDerived = new DerivedComponent(dispatchSpy, {});
         const initialDerived = bootstrapDerived.reduce({});
+        BaseComponent.DATA_COMPONENT = 'BaseComponent';
         DerivedComponent.DATA_COMPONENT = 'default-component-id';
         return { bootstrapBase, bootstrapDerived, initialBase, initialDerived, dispatchSpy };
     }
@@ -42,7 +43,7 @@ describe('BaseDataComponent', () => {
     describe('componentIdentifier', () => {
         it('defaults to static DATA_COMPONENT value', () => {
             const { initialBase, initialDerived } = setup();
-            expect(initialBase.componentIdentifier()).toBeUndefined();
+            expect(initialBase.componentIdentifier()).toEqual('BaseComponent');
             expect(initialDerived.componentIdentifier()).toEqual('default-component-id');
         })
 
@@ -147,8 +148,8 @@ describe('BaseDataComponent', () => {
             const { initialBase } = setup();
             initialBase.updated_at = 123;
             const newBase = initialBase.reduce({
-                type: 'persist/REHYDRATE',
-                payload: { BaseComponent: { data: 7, updated_at: 456 } }
+                type: ActionType.DATA_COMPONENT_REHYDRATE,
+                state: { BaseComponent: { data: 7, updated_at: 456 } }
             });
             expect(newBase.data).toEqual(7);
             expect(newBase.updated_at).toEqual(456);

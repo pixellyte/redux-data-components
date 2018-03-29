@@ -6,21 +6,20 @@ import GameClock from "./GameClock";
 
 class GameBoard extends DataComponent {
     componentDidMount() {
-        //this.newGame();
+        this.newGame();
     }
 
     componentDidUpdate(prev, reason) {
         if(reason !== 'REHYDRATE') {
-            if (prev.mode !== this.mode) {
+            if (prev.mode.data !== this.mode.data) {
                 // Must reset the game when changing mode.
-                //this.newGame();
+                this.newGame();
             } else if (this.isGameOver()) {
                 this.clock.stop();
             } else {
                 // Detect a revealed cell.  If there are no adjacent mines, reveal the adjacent cells as well.
                 const revealedCells = this.revealedCells().filter(cell => !prev.isRevealed(cell));
                 if(revealedCells.length > 0) {
-                    this.clock.start();
                     const cell = revealedCells[0];
                     if(!this.isExploded(cell) && this.adjacentMineCount(cell) === 0) {
                         this.adjacentCells(cell).filter(i => !this.isRevealed(i)).forEach(i => this.reveal(i));
@@ -175,7 +174,12 @@ class GameBoard extends DataComponent {
     }
 
     /// ACTIONS
-    cellAction(cell, type) { if(!this.isGameOver()) this.props.dispatch({type, cell}); }
+    cellAction(cell, type) {
+        if(!this.isGameOver()) {
+            this.props.dispatch({type, cell});
+            this.clock.start();
+        }
+    }
     reveal(cell) { this.cellAction(cell, ActionType.REVEAL_CELL); }
     unmark(cell) { this.cellAction(cell, ActionType.UNMARK_CELL); }
     mark(cell) { this.cellAction(cell, ActionType.MARK_CELL); }

@@ -31,9 +31,8 @@ function createConnect() {
                     }
                     return componentReference;
                 case 'persist/REHYDRATE':
-                case ActionType.DATA_COMPONENT_REHYDRATE:
-                    // It is necessary to regenerate the component reference on rehydration to thwart redux-persist's
-                    // auto-merge of results.
+                case ActionType.DATA_COMPONENT_REFRESH_PROXIES:
+                case ActionType.DATA_COMPONENT_RESET:
                     return reference(componentId, true);
                 default:
                     return reference ? reference(componentId) : null;

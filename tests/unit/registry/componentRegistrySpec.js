@@ -2,6 +2,7 @@ import componentRegistry, {DEFAULT_COMPONENT_REGISTRY_STATE} from "../../../src/
 import * as ActionType from "../../../lib/constants/actionTypes";
 
 class ComponentOne {
+    syncReferences() { return false; }
     reduce(action) {
         if(action.type === 'REDUCE_ONE') this.data = 'I REDUCED!';
         else this.data = "ComponentOne";
@@ -10,6 +11,7 @@ class ComponentOne {
 }
 
 class ComponentTwo {
+    syncReferences() { return false; }
     reduce(action) {
         this.data = "ComponentTwo";
         return this;

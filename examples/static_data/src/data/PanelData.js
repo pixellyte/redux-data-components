@@ -27,7 +27,6 @@ class PanelData extends AsyncFetchComponent {
     }
 
     fetch(why) {
-        console.log(why);
         return this.sleep(Math.floor(Math.random() * 10000))
             .then(() => {
                 return Math.floor(Math.random() * 100);

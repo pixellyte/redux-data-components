@@ -131,6 +131,13 @@ export default class BaseDataComponent {
         }, {});
     }
 
+    get lastDataState() {
+        return [...Object.keys(this.classReducers()), 'updated_at'].reduce((data, key) => {
+            data[key] = this[key];
+            return data;
+        }, {});
+    }
+
     reduce(action) {
         const newData = _coreReducer(this, action);
 
@@ -142,6 +149,35 @@ export default class BaseDataComponent {
         }
 
         return this;
+    }
+
+    syncReferences(componentStore, regenerate) {
+        let updated = false;
+        const reducers = Object.keys(this.classReducers());
+        const updates = {};
+        for(let i = 0; i < reducers.length; i++) {
+            const reducer = reducers[i];
+            if(isComponentProxy(this[reducer])) {
+                const proxied = this[reducer].targetComponent;
+                const canonical = componentStore[proxied.componentIdentifier()];
+                if(proxied !== canonical) {
+                    updates[reducer] = canonical.reference(true);
+                    updated = true;
+                }
+            }
+        }
+        if(updated) {
+            if(regenerate) {
+                const newInstance = new this.constructor(this.props.dispatch, this.classOptions);
+                newInstance.applyData({...this.lastDataState, ...updates });
+                componentStore[this.componentIdentifier()] = newInstance;
+            } else {
+                this.applyData(updates);
+                updated = false;
+            }
+        }
+        console.groupEnd();
+        return updated;
     }
 
     classReducers() {

@@ -29,8 +29,30 @@ function compileDataReflection(state) {
     }, {});
 }
 
+// Reconcile embedded references to other data components.  This needs to be done after other reducer updates have
+// been completed.  A component that was not otherwise regenerated may depend on a component that was, and thus will
+// need to be regenerated itself to correctly trigger lifecycle methods.  But any single component should only be
+// regenerated at most once per reduce.  After that, update references to touched components, but do not regenerate
+// them again.  This allows the state to stabilize even if there are circular dependencies.
+function syncReferences(action, oldState, newState) {
+    const updatedComponents = Object.keys(newState).filter(key => oldState[key] !== newState[key]);
+    let anyUpdated = updatedComponents.length > 0;
+    while(anyUpdated) {
+        anyUpdated = false;
+        for(let i in newState) {
+            const regenerate = (updatedComponents.indexOf(i) < 0);
+            if(newState[i].syncReferences(newState, regenerate)) {
+                updatedComponents.push(i);
+                anyUpdated = true;
+            }
+        }
+    }
+    return newState;
+}
+
 export default function componentRegistryReducer(state = DEFAULT_COMPONENT_REGISTRY_STATE, action) {
     let newState;
+    const oldState = state.state;
     switch(action.type) {
         case ActionType.DATA_COMPONENT_REGISTER:
             const { id, componentClass, classOptions, store } = action;
@@ -40,10 +62,10 @@ export default function componentRegistryReducer(state = DEFAULT_COMPONENT_REGIS
                 [id]: instanceReducer
             }
             return {
-                state: {
+                state: syncReferences(action, oldState, {
                     ...state.state,
                     [id]: instanceReducer(undefined, {})
-                },
+                }),
                 reducers,
                 combinedReducers: combineReducers(reducers)
             }
@@ -54,7 +76,7 @@ export default function componentRegistryReducer(state = DEFAULT_COMPONENT_REGIS
             newState = { ...state.state, [action.id]: action.component }
             return {
                 ...state,
-                state: newState,
+                state: syncReferences(action, oldState, newState),
                 [REFLECT_PROP]: compileDataReflection(newState)
             }
         default:
@@ -62,7 +84,7 @@ export default function componentRegistryReducer(state = DEFAULT_COMPONENT_REGIS
             newState = state.combinedReducers(state.state, action);
             return {
                 ...state,
-                state: newState,
+                state: syncReferences(action, oldState, newState),
                 [REFLECT_PROP]: compileDataReflection(newState)
             }
     }
