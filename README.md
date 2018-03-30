@@ -4,222 +4,53 @@ within the Redux store.  The components support lifecycle methods so that
 data events within the store can trigger subsequent actions without running
 afoul of the "don't dispatch while reducing" rule.
 
-## Why?
+## MIGRATION NOTE:
+Version 0.5 introduces minor breaking changes relative to earlier releases.  Before
+updating, please review MIGRATION.md to understand the consequences of an upgrade.
+
+## Why Data Components?
 Redux provides a tidy way of managing application state one discrete action 
-at a time, in a way that's easy to reason about.  But most nontrivial
-applications will involve asynchronous data loads, resulting in use of 
-redux-thunk and writing a lot of actions that look like this:
+at a time, in a way that's easy to reason about, but omits a clean model abstraction
+in ways that encourage poor separation of concerns.  Put into "MVC" terms, React is
+your View, Redux and its associated reducers are your Controller, but for anything
+you'd recognize as a Model, you're on your own. 
 
-```javascript
-function doTheThing() {
-    return dispatch => {
-        return Promise.resolve(() => {
-            dispatch({ type: "DOING_THE_THING" });
-            return fetchMyData();
-        }).then(data => {
-            dispatch({ type: "DID_THE_THING", data })
-            return data;
-        }).catch(exception => {
-            dispatch({ type: "FAILED_THE_THING", exception })            
-        })
-    }
-}
-```
+Most nontrivial React/Redux applications will mix application logic into view 
+components, reduce data redundantly to extract different aspects of the same 
+response, and implement their own asynchronous behaviors via Promises or async/await 
+that run parallel to the more obvious and maintainable serial message-pump model 
+provided by Redux.  The code you might otherwise aggregate into a model class ends up
+scattered across multiple files in ways idiosyncratic to each project, making them 
+harder to maintain and increasing ramp-up time for new developers.
 
-...followed by a corresponding lot of reducers that look like this:
+Redux Data Components encourage creation of discrete object-oriented data model 
+components that live in the Redux store, allowing for inheritance, composition
+and relevant methods so that operations on data live alongside the data itself.
+Data components also expose React-like lifecycle methods, and can dispatch actions
+from within these methods in response to data events, without using the lifecycle
+methods of your view components to mediate them.  With data components you can
+implement the logic of your application entirely separately from the view, and then
+treat the model layer as an API your view layer (or even multiple independent view
+layers) can consume.
 
-```javascript
-function thingDoingStatus(state = false, action) {
-    switch(action.type) {
-        case 'DOING_THE_THING':
-            return true;
-        case 'DID_THE_THING':
-        case 'FAILED_THE_THING':
-            return false;
-        default:
-            return state;
-    }
-}
-```
+This module also provides AsyncFetchComponent, a pre-made data component that
+automatically manages the state of an asynchronous fetch request, making robust
+remote data handling as trivial as implementing a single fetch method.
 
-...plus a bunch of other reducers for exposing aspects of the data we care about 
-(thingDoingData, thingDoingException, etc).
+A particular focus of Redux Data Components is efficient compatibility with
+[redux-persist](https://github.com/rt2zz/redux-persist) for maintaining local
+state between page loads.  The module does not depend on redux-persist directly,
+and is agnostic to v4/v5 distinctions, though you might need to vary your approach
+to implementing component lifecycle methods depending on which version you use. 
 
-Then your view component ends up looking like this:
-
-```javascript
-class MyComponent extends Component {
-    componentDidMount() {
-        this.props.dispatch(doTheThing());
-    }
-    
-    componentWillReceiveProps(nextProps) {
-        if(somePertinentChangeHappened(nextProps)) {
-            this.props.dispatch(doTheThing());
-        }
-    }
-    
-    render() {
-        const { thingDoingStatus } = this.props;
-        /* ... */
-    }
-}
-```
-
-### And what's wrong with that?
-A number of subtle problems start to creep in while using this pattern:
-1. **State Bloat** A general rule of thumb in React is never to add state that can be
-    inferred from props already available to the component.  The pattern above seems to
-    encourage the opposite, adding new reducers for each aspect of the data we care about.
-
-1. **Confusion of Concerns**  Suppose your component depends on three pieces of
-    asynchronously-loaded data, A, B and C.  A and B are independent, but C depends on the
-    combined result of A and B.  For instance, A is customer account state, B is customer 
-    cart contents, and C is a set of messages determined by evaluating A and B together.
-
-    The reducer for A doesn't have any knowledge of B or vice-versa, and you can't dispatch
-    during the reduce anyway.  So you end up with one of a couple of suboptimal solutions:
-
-    1.  **SUBOPTIMAL SOLUTION 1: Complicate your actions:**
-
-        ```javascript
-        function fetchA(currentA, currentB) {
-            return dispatch => {
-                return Promise.resolve(() => {
-                    dispatch({ type: "DOING_THE_THING" });
-                    return doTheActualFetchOfA();
-                }).then(data => {
-                    dispatch({ type: "DID_THE_THING", data })
-                    if(data != currentA) {
-                        dispatch(fetchC(data, currentB));
-                    }
-                    return data;
-                }).catch(exception => {
-                    dispatch({ type: "FAILED_THE_THING", exception })            
-                })
-            }        
-        }
-        ```
-        
-        Of course, we'd need to structure ```fetchB``` similarly.  This is ugly 
-        because our fetch actions need access to data beyond what they're fetching, 
-        and need to make application-logic decisions about the consequences of the
-        data changing.  The complexity increases with the number of data elements that 
-        contribute to the followup call, since adding a new data dependency of C 
-        requires a change to ```fetchA```, ```fetchB``` and any other dependency that
-        might trigger ```fetchC```.  Your ```fetchA``` method should do only that.
-        
-        Another side effect of this approach is the potential for long, nested promise
-        chains to manage asynchronous workflows, foregoing the perfectly good message 
-        pump Redux already provides in favor of a parallel mechanism that's harder to
-        reason about, and which puts the onus on the developer to report progress back
-        to Redux via timely dispatches as the promise progresses.
-        
-    1.  **SUBOPTIMAL SOLUTION 2: Complicate your views:**  
-
-        ```javascript
-        class MyComponent extends Component {
-            /* ... */
-            
-            componentWillUpdate(nextProps) {
-                if(nextProps.A != this.props.A || nextProps.B != this.props.B) {
-                    dispatch(fetchC(nextProps.A, nextProps.B));
-                }
-            }
-            
-            /* ... */
-        }
-        ```
-        
-        This is ugly because we've mixed application logic into our view component, 
-        using the React lifecycle methods as glue between independent properties 
-        for no other reason than it lets us dispatch fetchC in response to a 
-        data change.  This is a data concern, not a view concern, and should not live
-        in our view classes.
-
-1. **Diffusion of Responsibility** In the examples above, responsibility for
-   maintaining C is not contained in any central location, but distributed among
-   other components that are either contributors to or consumers of C.  This 
-   makes changes to any of the components involved more complicated, and can be an
-   annoyance for developers who must maintain this code.  Ideally, the
-   consumers should have no interest in C beyond rendering its value correctly,
-   and the contributors should have no interest at all.
-   
-In short, *something* should have centralized responsibility for C, including the 
-responsibility to watch for changes in A and B and to trigger a refresh of C 
-only when needed.  That something should not be a part of a view class, except to the
-extent that mounting a particular view is an event that might depend on an up-to-date
-value of C.
-
-### A Solution: Redux Data Components
-Redux Data Components provide solutions to all these issues and more.
- 
- - Data Components provide React-like lifecycle methods, and access to the store's
-   dispatch method.  It is legal to dispatch actions from these methods, giving an
-   option for triggering new actions on the basis of changes in data, without putting
-   that logic in components it doesn't properly belong to.
-    
-   The components provide a React-like interface for the sake of familiarity, but do
-   not depend on or use React itself in any way, making data components appropriate
-   for any Redux-backed application, whatever the rendering technology.
-   
- - Data Components can be nested, similar to combineReducers, but such that a component's
-   lifecycle methods have access to the current state values of the reducers that comprise
-   it, allowing for constructive composition of well-encapsulated units of application
-   functionality.  Constituent reducers may be class members of the data component, 
-   imported standard reducer functions, or other data components.
-   
- - Reduction of data components is efficient: to prevent unnecessary instance churn, all
-   constituent reducers are run first against the existing instance, and then a new data
-   component instance is generated only if one or more of the constituents has changed.
-   As a result, object identity (===) can be used to test for changes in a data component.
-   
- - Support for [redux-persist](https://github.com/rt2zz/redux-persist) is baked-in (without
-   an explicit dependency), although with a caveat:  you will want to use v5 or later of
-   redux-persist, and use the PersistGate feature for React applications.  Otherwise, any
-   view components that depend on data components might trigger loads during their initial
-   render before the REHYDRATE action occurs, resulting in loads of data that might already
-   be fresh in local storage.
-   
- - Data Component classes may inherit from one another, allowing construction
-   of more complex components.  Lifecycle methods are called along the entire ancestor
-   chain, so you can define ```componentWillUpdate``` on your component without worrying about
-   obscuring necessary behavior in an ancestor's implementation of the same method, and
-   without explicitly invoking ```super.componentWillUpdate```.
-   
- - Using class instances for managing data allows for implementation of transform methods
-   that live with the data itself, rather than in transform-only reducers or in the logic
-   of a view component.
-   
- - Likewise, data component classes can expose action generator methods appropriate for the
-   class.  The result is that the data layer of your application begins to resemble an API,
-   backed by Redux, that your view layer consumes.
-   
- - The Data Components module includes AsyncFetchComponent, a Data Component that provides
-   a standard interface for fetching an external resource.  Extend this component and provide
-   a ```fetch()``` method that returns the data from your fetch.  
-   
-   AsyncFetchComponent provides four built-in internal reducers:  
-    - ```data``` contains the data returned from a successful fetch.  
-    - ```state``` tracks the load state with a number of values (STALE, REQUESTED, LOADING, ERROR, FRESH).  
-    - ```error``` member tracks the error result in case the state becomes ERROR.
-    - ```args``` arguments passed to ```request``` or ```forceReload``` are captured here and passed to ```fetch```.
-   
-   Using an AsyncFetchComponent is a solution to the problem of writing the same boilerplate 
-   action for different endpoints day after day.  Implement the meat of the fetch, and all 
-   the magic of robustly integrating that fetch into Redux is handled for you.  Your view 
-   component will be able to look at the properties on the component and know exactly how to 
-   render (e.g. a loading spinner when ```state``` is LOADING, or exception information when 
-   ```state``` is ERROR).
-   
- - AsyncFetchComponents share data by default.  This is useful for shared/static application
-   data cases where multiple components depend on a resource that should be loaded only once.
-   Derive your data component from AsyncFetchComponent, and have as many components as you
-   like depend on it, or even on multiple instances of the same component.  The first component
-   to request the resource triggers a load, and the results (including state management) apply
-   by default to all instances of the same component, though this behavior can be customized.
-   
-   
+Finally, Redux Data Components allow for data sharing between multiple instances of
+the same component in your Redux tree.  So if your app aggregates multiple independent
+views that each depend on some of the same data, you can freely add the shared data
+component to reducers for each view, and the first one to load the shared data
+automatically makes it available to all other consumers.  This adds flexibility to
+build self-contained and reusable components of application functionality that
+nevertheless depend on shared data models that quietly cooperate amongst themselves
+behind the scenes.   
  
 ## Usage
 
@@ -231,46 +62,51 @@ Install using npm:
 npm i redux-data-components
 ```
 
-### Middleware
+### Enabling the component store
 
-Redux Data Components depend on a middleware component.  This middleware enables the lifecycle
-methods and dispatch access for data components.  Add to your project like any other
-middleware:
+*Prior to version 0.5, Redux Data Components required the use of middleware to
+enable lifecycle methods.  The middleware is no longer supported and should be
+removed from your legacy projects when upgrading.*
+
+Data components are stored in a specialized auxiliary data store.  Create this store
+and wire it to your own main redux store by calling the `enableComponentStore` method: 
 
 ```javascript
 import rootReducer from './rootReducer';
-import { dataComponentMiddleware } from 'redux-data-components'
+import middleware from './middleware';
+import { enableComponentStore } from 'redux-data-components'
 
-const middleware = applyMiddleware(dataComponentMiddleware);
-const store = createStore(
-    rootReducer,
-    {},
-    middleware
-);
+const enhancers = applyMiddleware(middleware);
+const store = createStore(rootReducer,{},enhancers);
+enableComponentStore(store);
 ```
+
+You may also apply middleware to the component store by passing one or more
+middleware functions as additional arguments to `enableComponentStore`.
 
 ### Defining Components
 
 #### Deriving a component
 
-Derive your component class from DataComponent (or a descendant class).
+Derive your component class from BaseDataComponent (or a descendant class).
 
 ```javascript
-import { DataComponent } from 'redux-data-components'
+import { BaseDataComponent } from 'redux-data-components'
 
-class MyComponent extends DataComponent {
+class MyComponent extends BaseDataComponent {
 }
 ```
 
 #### Connecting the component
 
 A data component must be "connected" to participate in the Redux store.  This defines
-a reducer-wrapper function that manages the data component.
+a reducer-wrapper function that manages the proxy reference that represents your
+component in the main store.
 
 ```javascript
-import { DataComponent, connect } from 'redux-data-components'
+import { BaseDataComponent, connect } from 'redux-data-components'
 
-class MyComponent extends DataComponent {
+class MyComponent extends BaseDataComponent {
 }
 
 export default connect("MyComponent", MyComponent);
@@ -280,14 +116,74 @@ The first argument is a default component identifier.  Originally this was infer
 from the class name, but minification could mangle these identifiers in application-breaking ways.
 Old syntax is still accepted with a warning.
 
-#### Option: Use the default data reducer
+The `BaseDataComponent` class provides support for internal reducers, but provides
+none of its own.  To extend the behavior of the component, there are a number of 
+approaches available:
 
-The base DataComponent defines one reducer, ```data```, that by default does nothing
-but return default state, ```null``` by default.  You may customize its behavior by 
-implementing appropriate methods:
+#### Option: Decorated reducer methods
+If your project is configured with support for decorators, you may annotate a 
+reducer method to register it.
 
 ```javascript
-import { DataComponent, connect } from 'redux-data-components'
+import { BaseDataComponent } from 'redux-data-components';
+import { Reducer } from 'redux-data-components/lib/decorators';
+
+
+class MyComponent extends BaseDataComponent {
+    @Reducer('mydata')
+    reduceMyData(state = 'DEFAULT', action) {
+        //...
+    }
+}
+```  
+
+This will result in a "mydata" property on the data component instance.
+
+#### Option: Completely replace the reducers
+
+The set of reducers for the class is returned by the ```classReducers``` method.
+You may implement this method to define the reducers for a class.  Note that
+support for decorator-based reducers is built into BaseDataComponent's
+implementation of this method.  Be sure to call `super.classReducers` as shown
+below if you want to maintain this behavior.
+
+Calling `super` is also used to aggregate reducers in a derived class, all
+reducers defined in the superclass will be available in the descendant.
+
+```javascript
+import { BaseDataComponent, connect } from 'redux-data-components'
+
+class MyComponent extends BaseDataComponent {
+    classReducers() {
+        return {
+            ...super.classReducers(),
+            my_counter: this.reduceMyCounter
+        }
+    }
+    
+    reduceMyCounter(state = 0, action) {
+        switch(action.type) {
+            case 'INCREMENT':
+                return state + 1;
+            case 'DECREMENT':
+                return state - 1;
+            default:
+                return state;
+        }
+    }
+}
+
+export default connect("MyComponent", MyComponent);
+```
+
+#### Option: Use the default data reducer
+
+The most trivial BaseDataComponent descendant, `DataComponent` defines one reducer,
+`data`, that by default does nothing but return `null`.
+You may customize this behavior by implementing appropriate methods:
+
+```javascript
+import { DataComponent, connect } from 'redux-data-components';
 
 class MyComponent extends DataComponent {
     defaultState() {
@@ -314,89 +210,12 @@ a reducer method defined as a class member, we can augment an existing reducer i
 class with new action handlers (or replacements for existing ones) by using ```super``` in 
 the default case as seen above.
 
-#### Option: Completely replace the reducers
-
-The set of reducers for the class is returned by the ```classReducers``` method.  We may
-override this method to skip using the default implementation for ```data```.
-
-```javascript
-import { DataComponent, connect } from 'redux-data-components'
-
-class MyComponent extends DataComponent {
-    classReducers() {
-        return {
-            my_counter: this.reduceMyCounter
-        }
-    }
-    
-    reduceMyCounter(state = 0, action) {
-        switch(action.type) {
-            case 'INCREMENT':
-                return state + 1;
-            case 'DECREMENT':
-                return state - 1;
-            default:
-                return state;
-        }
-    }
-}
-
-export default connect("MyComponent", MyComponent);
-```
-
-#### Option: Add additional reducers
-
-You can use ```super``` to add reducers to a derived data component.  This component will
-have both data *and* status reducers:
-
-```javascript
-import { DataComponent, connect } from 'redux-data-components'
-
-class MyComponent extends DataComponent {
-
-    defaultState() { 
-        return 0;
-    }
-    
-    classReducers() {
-        return {
-            ...super.classReducers(),
-            status: this.reduceStatus
-        }
-    }
-    
-    reduceData(state, action) {
-        switch(action.type) {
-            case 'INCREMENT':
-                return state + 1
-            case 'DECREMENT':
-                return state - 1
-            default:
-                return super.reduceData(state, action);
-        }    
-    }
-    
-    reduceStatus(state = 'EVEN', action) {
-        switch(action.type) {
-            case 'BECAME_EVEN':
-                return 'EVEN';
-            case 'BECAME_ODD':
-                return 'ODD';
-            default:
-                return state;
-        }
-    }
-}
-
-export default connect("MyComponent", MyComponent);
-```
-
 #### Accessing reduced data
 
 The value exposed in our data store is an instance of the 
 ```DataComponent```-derived class.  Class reducer values are exposed as 
 properties of the object.  In the example above, a React view component
-might use ```this.props.my_component.status``` to get at the status value.
+might use ```this.props.my_component.data``` to get at the data value.
 
 Lifecycle methods will likewise access ```this.status``` (and/or 
 ```[previous|next].status``` in the case of ```component[Did|Will]Update```).
@@ -723,8 +542,9 @@ export default combineReducers({
 ```
 
 In this example, because my_component_1 and my_component_2 share the same
-(default) componentIdentifier, they are linked to one another.  Actions targeted to
-one of them will affect both due to their shared identity.
+(default) componentIdentifier, they are linked to one another.  That is, the 
+references in your store point to the same actual instance behind the scenes.
+Actions targeted to one of them will affect both due to their shared identity.
 
 #### Class options and unlinking components
 
@@ -826,36 +646,79 @@ Less obvious is the behind-the-scenes support that restores data component insta
 to their correct class identities after a rehydrate (redux-persist only stores raw
 objects).  
 
+As of v0.5, the actual data components are stored in a separate,
+internally-maintained store, while the items in the main Redux store, 
+as well as any nested component references in other components, are Proxy-based
+references to the real components.  This allows tighter control of the 
+persistence.  To enable persistence, you will add an instance of the 
+`dataComponentReflector` reducer somewhere in your Redux tree.  The reflector 
+will expose the data elements of your components in a serializable form and 
+handle reconstituting the components in the component store when the reflector 
+is rehydrated.
+
+The dataComponentReflector can be configured to support both auto-rehydrated
+and manually rehydrated configurations, and is entirely agnostic to the version
+of redux-persist being used.
+
+The configuration object recognizes the following options:
+
+- **auto**: *(Boolean, default true)* Indicates whether the redux-persist
+  implementation is configured for automatic rehydration.
+- **key**: *(String, default 'root')* Provides the key for the persistence
+  store in which the dataComponentReflector is mounted.  Ignored if **auto**
+  is *true*.
+- **path**: *(String or Array of String, default [])*  Indicates the path to
+  the dataComponentReflector in the payload when rehydrating.  Defaults to 
+  the root of the payload.  The path argument can be an array of key names or
+  a slash ('/') separated string.  Ignored if **auto** is *true*.
+  
+In the overly elaborate example below, auto-rehydrate is presumed disabled.  
+The `key` and `path` options allow the reflector reducer to locate its own data 
+in the REHYDRATE payload.
+
+```javascript
+//rootReducer.js
+import { combineReducers } from 'redux';
+import { persistCombineReducers } from 'redux-persist';
+import storage from 'redux-persist/es/storage';
+import { dataComponentReflector } from 'redux-data-components';
+import MyComponent from './MyComponent';
+import someReducer from './someReducer';
+
+
+const persistConfig = {
+    key: 'myPersistStore',
+    storage
+}
+
+export default persistCombineReducers(persistConfig, {
+    my_component: MyComponent,
+    nested: combineReducers({
+        someReducer,
+        reflector: dataComponentReflector({
+            auto: false,
+            key: 'myPeristStore',
+            path: ['nested', 'reflector']
+        })
+    })
+})
+```
+
 Additionally, every data component has an ```updated_at``` timestamp, in
 millisecond epoch time, that is updated every time a new component instance is
 created in response to a data change, except in the case of a rehydrate (which
 just restores the prior timestamp from storage in the expected way).  This timestamp
 can be used to track the freshness of persisted data.
 
-Finally, the ```ReducerContext``` object (which stands in for the data component
-when reducing) provides a ```rehydrateItem``` helper method, to be used in responding
-to a rehydrate action.  The reducer context already tracks an instance's path in the
-redux store, so you can handle rehydration of subcomponents:
+### Debugging Data Components
 
-```javascript
-import { REHYDRATE } from 'redux-persist/constants'
- 
-class MyComponent extends DataComponent {
-    classReducers() {
-        return { stuff: this.reduceStuff };
-    }
-     
-    reduceStuff(state = 'some default stuff', action) {
-        switch(action.type) {
-            case REHYDRATE:
-                return this.rehydrateItem(action.payload, 'stuff');
-            default:
-                return state;        
-        }
-    }
-}
-```
+When debugging, you will notice that what appears in your store are
+anonymous Proxy objects instead of the actual components.  These are bound to empty
+objects ({}) instead of the target to prevent serialization via the (possibly
+duplicated) proxies.  But the Proxy's get method forwards all calls to the correct
+object, so the Proxy works as expected in place of the actual component.
 
-The default ```data``` reducer does this automatically, as do built-in reducers
-in ```AsyncFetchComponent```.  Reducers you add from scratch should handle this
-themselves if you need persistence support.
+Programmatically, `(Proxy).targetComponent` will return the actual component, though this
+should practically never be necessary.  In the debugger, expand the Proxy's "Handler"
+(*not* its "Target"), and note that the "target" member of the handler points to the
+actual component instance.  This exists only for purposes of browsing in the debugger.
