@@ -217,8 +217,8 @@ The value exposed in our data store is an instance of the
 properties of the object.  In the example above, a React view component
 might use ```this.props.my_component.data``` to get at the data value.
 
-Lifecycle methods will likewise access ```this.status``` (and/or 
-```[previous|next].status``` in the case of ```component[Did|Will]Update```).
+Lifecycle methods will likewise access ```this.data``` (and/or 
+```[previous|next].data``` in the case of ```component[Did|Will]Update```).
 This is the basis for building more complex behaviors driven by store events.
 
 > **NOTE:** It may have occurred to you by now that it seems possible to

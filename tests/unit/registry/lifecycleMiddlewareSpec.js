@@ -105,12 +105,12 @@ describe('lifecycleMiddleware', () => {
         const action = {type: 'TEST'};
         Promise.resolve(lifecycleMiddleware(store)(next)(action))
             .then(() => {
-                expect(spies.base.componentWillUpdate).toHaveBeenCalledWith(updated, 'UPDATED');
-                expect(spies.child.componentWillUpdate).toHaveBeenCalledWith(updated, 'UPDATED');
+                expect(spies.base.componentWillUpdate).toHaveBeenCalledWith(updated, 'UPDATE');
+                expect(spies.child.componentWillUpdate).toHaveBeenCalledWith(updated, 'UPDATE');
             })
             .then(() => {
-                expect(spies.base.componentDidUpdate).toHaveBeenCalledWith(original, 'UPDATED');
-                expect(spies.child.componentDidUpdate).toHaveBeenCalledWith(original, 'UPDATED');
+                expect(spies.base.componentDidUpdate).toHaveBeenCalledWith(original, 'UPDATE');
+                expect(spies.child.componentDidUpdate).toHaveBeenCalledWith(original, 'UPDATE');
             })
             .then(() => {
                 expect(callOrder).toEqual([

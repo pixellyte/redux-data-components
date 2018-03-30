@@ -38,7 +38,7 @@ export default function lifecycleMiddleware(store) {
             const u = updated[name];
             if (o !== u) {
                 updates[name] = updated[name].lastReducedDataState;
-                runLifecycleMethods(o, u, UPDATE_TYPES[action.type] || 'UPDATED')
+                runLifecycleMethods(o, u, UPDATE_TYPES[action.type] || 'UPDATE')
             }
         }
         return nextAction;
