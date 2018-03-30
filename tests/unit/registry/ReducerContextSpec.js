@@ -1,4 +1,4 @@
-import ReducerContext from '../../src/ReducerContext';
+import ReducerContext from '../../../src/registry/ReducerContext';
 
 describe('ReducerContext', () => {
 
@@ -9,7 +9,6 @@ describe('ReducerContext', () => {
         class MockComponent extends MockProto {
             constructor() {
                 super();
-                this.props = { path: ['my', 'component', 'path'] };
                 this.classOptions = { some: 'class', options: 'here' };
             }
             componentIdentifier() { return 'my-component-name' }
@@ -22,7 +21,6 @@ describe('ReducerContext', () => {
         const mock = mockComponent();
         const context = new ReducerContext(mock, mock.classOptions);
         expect(context.id).toEqual('my-component-name');
-        expect(context.path).toEqual(['my', 'component', 'path']);
         expect(context.classOptions).toEqual({ some: 'class', options: 'here' });
         expect(context.myMethod()).toEqual('SUPER: my-method-result');
     })
@@ -31,7 +29,6 @@ describe('ReducerContext', () => {
         const context = new ReducerContext({
             componentIdentifier: () => 'id'
         });
-        expect(context.path).toEqual([]);
         expect(context.classOptions).toEqual({})
     })
 
@@ -40,7 +37,7 @@ describe('ReducerContext', () => {
         const context = new ReducerContext(mock, mock.classOptions);
         expect(context.fingerprint())
             .toEqual(
-                '{"id":"my-component-name","path":["my","component","path"],"classOptions":{"some":"class","options":"here"}}'
+                '{"id":"my-component-name","classOptions":{"some":"class","options":"here"}}'
             )
     })
 
@@ -67,12 +64,10 @@ describe('ReducerContext', () => {
 
     describe('rehydrateItem method', () => {
 
-        it('pulls items from rehydrate payload based on path', () => {
+        it('pulls items from rehydrate payload based on item', () => {
             const mock = mockComponent();
             const context = new ReducerContext(mock, mock.classOptions);
-            expect(context.rehydrateItem({
-                my: { component: { path: { data: 'WOOT' }}}
-            }, 'data')).toEqual('WOOT');
+            expect(context.rehydrateItem({ data: 'WOOT' }, 'data')).toEqual('WOOT');
         })
 
     })

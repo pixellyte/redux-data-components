@@ -6,7 +6,7 @@ var execSync = require('child_process').execSync;
 
 gulp.task('build', ['clean'], function() {
     gulp.src('src/**/*.js')
-        .pipe(babel({ presets: ['es2015', 'stage-1'] }))
+        .pipe(babel({ presets: ['es2015', 'stage-1'], plugins: ['transform-decorators-legacy'] }))
         .pipe(gulp.dest('lib/'));
 });
 

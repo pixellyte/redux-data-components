@@ -1,17 +1,22 @@
 import DataComponent from './DataComponent'
-import * as ActionType from './constants/actionTypes'
-import * as State from './constants/dataState'
+import * as ActionType from '../constants/actionTypes'
+import * as State from '../constants/dataState'
+import { Reducer, Action } from '../decorators/index'
 
 export default class AsyncFetchComponent extends DataComponent {
 
     doDataLoad() {
-        const loader = new Promise((resolve, reject) => {
+        const loader = new Promise((resolve) => {
             this.props.dispatch({
                 type: ActionType.DATA_COMPONENT_LOADING,
                 component: this.componentIdentifier()
             });
             const data = this.fetch(...this.args);
-            resolve(data);
+            if(data instanceof Promise) {
+                return resolve(data.then(result => result));
+            } else {
+                return resolve(data);
+            }
         });
 
         loader.then(data => {
@@ -61,15 +66,6 @@ export default class AsyncFetchComponent extends DataComponent {
         return this.defaultState();
     }
 
-    classReducers() {
-        return {
-            ...super.classReducers(),
-            state: this.reduceDataState,
-            error: this.reduceDataError,
-            args: this.reduceFetchArgs
-        }
-    }
-
     reduceData(previousData = this.defaultState(), action) {
         switch(action.type) {
             case ActionType.DATA_COMPONENT_RESPONSE:
@@ -81,6 +77,7 @@ export default class AsyncFetchComponent extends DataComponent {
         }
     }
 
+    @Reducer('state')
     reduceDataState(previousState = State.STALE, action) {
         const isStale = (previousState === State.STALE || previousState === State.ERROR);
         switch(action.type) {
@@ -101,6 +98,7 @@ export default class AsyncFetchComponent extends DataComponent {
         }
     }
 
+    @Reducer('error')
     reduceDataError(previousError = null, action) {
         switch(action.type) {
             case ActionType.DATA_COMPONENT_ERROR:
@@ -117,6 +115,7 @@ export default class AsyncFetchComponent extends DataComponent {
         }
     }
 
+    @Reducer('args')
     reduceFetchArgs(previousArgs = [], action) {
         switch(action.type) {
             case ActionType.DATA_COMPONENT_REQUEST:
@@ -130,6 +129,7 @@ export default class AsyncFetchComponent extends DataComponent {
     // for fresh data.  Only one fetch will happen no matter how many
     // components request the data, so it is possible but not necessary
     // to check the value of .state before requesting.
+    @Action
     request(...args) {
         this.props.dispatch({
             type: ActionType.DATA_COMPONENT_REQUEST,
@@ -143,6 +143,7 @@ export default class AsyncFetchComponent extends DataComponent {
     // performs a request.  The optional reset flag controls whether the
     // current data is cleared.  If true, the data is reset to the value
     // of this.defaultState().
+    @Action
     invalidate(reset = false) {
         this.props.dispatch({
             type: ActionType.DATA_COMPONENT_INVALIDATE,
@@ -155,6 +156,7 @@ export default class AsyncFetchComponent extends DataComponent {
     // current state.  As with .request(), any number of calls to
     // .forceReload (within the current render cycle) will trigger
     // only a single load.
+    @Action
     forceReload(...args) {
         this.props.dispatch({
             type: ActionType.DATA_COMPONENT_INVALIDATE,
