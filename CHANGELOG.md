@@ -1,6 +1,28 @@
 # Changelog
+
+## v0.5.2
+2 April 2018
+
+Small enhancements:
+- `dataComponentReflector` now accepts 'include' and 'exclude' options.  Each accepts
+a single component identifier or Array of component identifiers.  This can be used for
+whitelist/blacklist behavior for component persistence, but also for separate
+reflectors (under separate redux-persist keys) to persist partial sets of data
+components in different subtrees.
+
+- 
+
+## v0.5.1
+30 March 2018
+
+Minor fixes to 0.5.0 release:
+- In `componentWillUpdate` and `componentDidUpdate`, the `updateType` argument will
+  receive 'UPDATE' instead of 'UPDATED' for consistency with both the other values
+  and the documentation.
+- Corrections to README for consistency and clarity.
+
 ## v0.5.0
-2 March 2018
+30 March 2018
 
 #### Breaking Changes
  - Middleware is no longer required (or supported) to enable lifecycle methods for 

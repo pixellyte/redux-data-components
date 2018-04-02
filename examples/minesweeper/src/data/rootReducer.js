@@ -12,5 +12,5 @@ const persistConfig = {
 export default persistCombineReducers(persistConfig, {
     mode: GameMode,
     board: GameBoard,
-    data: dataComponentReflector()
+    data: dataComponentReflector({ exclude: 'GameClock' })
 });

@@ -37,7 +37,26 @@ function enableComponentStore(store, ...middleware) {
                 })
             }
         },
-        reflection: () => componentRegistry.getState()['__@@_reflected_component_data'],
+        reflection: (options = {}) => {
+            const state = componentRegistry.getState()['__@@_reflected_component_data']
+            let { include, exclude } = options;
+            if (typeof include === 'undefined') include = Object.keys(state);
+            else if(!Array.isArray(include)) include = [include];
+            if (typeof exclude === 'undefined') exclude = [];
+            else if(!Array.isArray(exclude)) exclude = [exclude];
+            for(let i = 0; i < exclude.length; i++) {
+                while(true) {
+                    const pos = include.indexOf(exclude[i]);
+                    if(pos < 0) break;
+                    delete include[pos];
+                }
+            }
+            const keys = [...include];
+            return keys.reduce((r, key) => {
+                r[key] = state[key];
+                return r;
+            }, {});
+        },
         rehydrate: () => Promise.resolve().then(() => originalDispatch({
             type: ActionType.DATA_COMPONENT_REFLECTOR_REHYDRATED,
             rehydrate: (state) => componentRegistry.dispatch({

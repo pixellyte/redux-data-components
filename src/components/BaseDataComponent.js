@@ -56,7 +56,7 @@ function _coreReducer(component, action) {
 
         if(action.type === ActionType.DATA_COMPONENT_REHYDRATE) {
             const restored = action.state[component.componentIdentifier()];
-            if(restored.hasOwnProperty(key)) {
+            if(restored && restored.hasOwnProperty(key)) {
                 result[key] = restored[key];
                 result[UPDATED_FLAG] = true;
             }
