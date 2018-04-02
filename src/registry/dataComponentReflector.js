@@ -6,6 +6,8 @@ const DEFAULT_OPTIONS = {
     key: 'root',  // redux-persist key for the store in which the reflector is mounted.
     path: [] // path to the reflection in the persist store.  Can be a list of path components or a slash/separated/string.
 }
+// optional option: 'include': a single component ID or array of component IDs that will be persisted.
+// optional option: 'exclude': a single component ID or array of component IDs that will be excluded from persistence.
 
 function normalizePath(options) {
     if(typeof options.path === 'string') {
@@ -26,7 +28,7 @@ function dataComponentReflector(options = {}) {
             case ActionType.DATA_COMPONENT_PROBE:
                 reflection = action.methods.reflection;
                 rehydrate = action.methods.rehydrate;
-                return reflection();
+                return reflection(options);
             case 'persist/REHYDRATE':
                 let newState = state;
                 if(!config.auto && action.key === config.key) {
@@ -35,7 +37,7 @@ function dataComponentReflector(options = {}) {
                 if(rehydrate) rehydrate();
                 return newState;
             default:
-                return reflection ? reflection() : state;
+                return reflection ? reflection(options) : state;
         }
     }
 }

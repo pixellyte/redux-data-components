@@ -671,6 +671,13 @@ The configuration object recognizes the following options:
   the dataComponentReflector in the payload when rehydrating.  Defaults to 
   the root of the payload.  The path argument can be an array of key names or
   a slash ('/') separated string.  Ignored if **auto** is *true*.
+- **include**: *(String or Array of String, defaults to array of all component IDs)*
+  Specifies a single component identifier or array of component identifiers that 
+  will be persisted by this reflector.
+- **exclude**: *(String or Array of String, default [])*  Specifies a single 
+  component identifier or array of component identifiers that will be excluded from
+  persistence in this reflector.  If a component appears in both `include` and
+  `exclude`, the exclusion will take precedence.
   
 In the overly elaborate example below, auto-rehydrate is presumed disabled.  
 The `key` and `path` options allow the reflector reducer to locate its own data 
@@ -698,7 +705,8 @@ export default persistCombineReducers(persistConfig, {
         reflector: dataComponentReflector({
             auto: false,
             key: 'myPeristStore',
-            path: ['nested', 'reflector']
+            path: ['nested', 'reflector'],
+            include: ['MyComponent'] // redundant in this case, but for example.
         })
     })
 })
