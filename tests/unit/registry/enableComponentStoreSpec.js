@@ -48,7 +48,8 @@ describe('enableComponentStore', () => {
                 reference: jasmine.anything(),
                 register: jasmine.anything(),
                 reflection: jasmine.anything(),
-                rehydrate: jasmine.anything()
+                rehydrate: jasmine.anything(),
+                defer: jasmine.anything()
             }
         });
         expect(componentStoreActions).toEqual([]);

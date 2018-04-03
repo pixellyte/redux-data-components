@@ -712,11 +712,23 @@ export default persistCombineReducers(persistConfig, {
 })
 ```
 
-Additionally, every data component has an ```updated_at``` timestamp, in
-millisecond epoch time, that is updated every time a new component instance is
-created in response to a data change, except in the case of a rehydrate (which
-just restores the prior timestamp from storage in the expected way).  This timestamp
-can be used to track the freshness of persisted data.
+Components expose two properties that can be of use in managing their persistence:
+
+- **updated_at**: A timestamp in millisecond epoch time representing the last time
+  the component was modified.  This timestamp is restored on rehydration, so that
+  consumers can determine the freshness of a restored component.
+
+- **isMounted**: A flag indicating whether the componentDidMount event has fired
+  for the component.  For persisted components, the mount event is held until after
+  rehydration.  Non-persisted components will trigger the event on page load.  This
+  provides a hint to consumers not to perform lengthy (possibly remote-loaded)
+  setup on a component with valid persisted data waiting to be restored.
+  
+  This is particularly useful for users of redux-persist v4, who do not have access
+  to v5's `PersistGate` wrapper.  Since rendering is not deferred, view lifecycle
+  methods will fire before `REHYDRATE`, and could be used to trigger a premature load.
+  Users in this situation should treat the component data as unready for rendering
+  until isMounted becomes true, and then handle any remaining setup.
 
 ### Debugging Data Components
 

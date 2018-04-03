@@ -13,6 +13,17 @@ function enableComponentStore(store, ...middleware) {
         componentRegistryMiddleware
     );
 
+    const mount = (ids) => {
+        const registeredComponents = componentRegistry.getState().state;
+        for (let i = 0; i < ids.length; i++) {
+            const id = ids[i];
+            const component = registeredComponents[id];
+            if(typeof component !== 'undefined') {
+                callEventChain(component, component, 'componentDidMount');
+            }
+        }
+    }
+
     const originalDispatch = store.dispatch;
     const methods = {
         get: (id) => getIn(componentRegistry.getState(), ['state', id]) || {},
@@ -37,33 +48,21 @@ function enableComponentStore(store, ...middleware) {
                 })
             }
         },
-        reflection: (options = {}) => {
-            const state = componentRegistry.getState()['__@@_reflected_component_data']
-            let { include, exclude } = options;
-            if (typeof include === 'undefined') include = Object.keys(state);
-            else if(!Array.isArray(include)) include = [include];
-            if (typeof exclude === 'undefined') exclude = [];
-            else if(!Array.isArray(exclude)) exclude = [exclude];
-            for(let i = 0; i < exclude.length; i++) {
-                while(true) {
-                    const pos = include.indexOf(exclude[i]);
-                    if(pos < 0) break;
-                    delete include[pos];
-                }
-            }
-            const keys = [...include];
-            return keys.reduce((r, key) => {
-                r[key] = state[key];
-                return r;
-            }, {});
-        },
+        reflection: () => componentRegistry.getState()['__@@_reflected_component_data'],
         rehydrate: () => Promise.resolve().then(() => originalDispatch({
             type: ActionType.DATA_COMPONENT_REFLECTOR_REHYDRATED,
-            rehydrate: (state) => componentRegistry.dispatch({
-                type: ActionType.DATA_COMPONENT_REHYDRATE,
-                state
-            })
-        })).then(() => store.dispatch({ type: ActionType.DATA_COMPONENT_REFRESH_PROXIES }))
+            rehydrate: (state) => {
+                componentRegistry.dispatch({
+                    type: ActionType.DATA_COMPONENT_REHYDRATE,
+                    state
+                });
+                Promise.resolve().then(() => mount(Object.keys(state)));
+            }
+        })).then(() => store.dispatch({ type: ActionType.DATA_COMPONENT_REFRESH_PROXIES })),
+        defer: (ids) => componentRegistry.dispatch({
+            type: ActionType.DATA_COMPONENT_DEFER_MOUNT,
+            ids
+        })
     }
 
     store.dispatch = (action) => {
@@ -78,10 +77,9 @@ function enableComponentStore(store, ...middleware) {
     originalDispatch({type: ActionType.DATA_COMPONENT_PROBE, methods});
 
     const registeredComponents = componentRegistry.getState().state;
-    for (const id in registeredComponents) {
-        const component = registeredComponents[id];
-        callEventChain(component, component, 'componentDidMount');
-    }
+    const deferrals = componentRegistry.getState().deferrals;
+    const immediate = Object.keys(registeredComponents).filter(item => deferrals.indexOf(item) < 0);
+    mount(immediate);
 
     return store;
 }

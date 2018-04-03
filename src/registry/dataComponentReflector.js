@@ -17,8 +17,32 @@ function normalizePath(options) {
     }
 }
 
+function getSelectionKeys(state, options) {
+    let { include, exclude } = options;
+    if (typeof include === 'undefined') include = Object.keys(state);
+    else if(!Array.isArray(include)) include = [include];
+    if (typeof exclude === 'undefined') exclude = [];
+    else if(!Array.isArray(exclude)) exclude = [exclude];
+    for(let i = 0; i < exclude.length; i++) {
+        while(true) {
+            const pos = include.indexOf(exclude[i]);
+            if(pos < 0) break;
+            delete include[pos];
+        }
+    }
+    return include.filter(i => i);
+}
+
+function filterByKeys(state, keys) {
+    return keys.reduce((r, key) => {
+        r[key] = state[key];
+        return r;
+    }, {});
+}
+
 function dataComponentReflector(options = {}) {
     let reflection, rehydrate;
+    let keys = [];
     const config = normalizePath({ ...DEFAULT_OPTIONS, ...options });
     return (state = {}, action) => {
         switch(action.type) {
@@ -28,7 +52,10 @@ function dataComponentReflector(options = {}) {
             case ActionType.DATA_COMPONENT_PROBE:
                 reflection = action.methods.reflection;
                 rehydrate = action.methods.rehydrate;
-                return reflection(options);
+                const result = reflection();
+                keys = getSelectionKeys(result, options);
+                action.methods.defer(keys);
+                return filterByKeys(result, keys);
             case 'persist/REHYDRATE':
                 let newState = state;
                 if(!config.auto && action.key === config.key) {
@@ -37,7 +64,7 @@ function dataComponentReflector(options = {}) {
                 if(rehydrate) rehydrate();
                 return newState;
             default:
-                return reflection ? reflection(options) : state;
+                return reflection ? filterByKeys(reflection(), keys) : state;
         }
     }
 }

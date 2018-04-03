@@ -4,13 +4,19 @@
 2 April 2018
 
 Small enhancements:
-- `dataComponentReflector` now accepts 'include' and 'exclude' options.  Each accepts
-a single component identifier or Array of component identifiers.  This can be used for
-whitelist/blacklist behavior for component persistence, but also for separate
-reflectors (under separate redux-persist keys) to persist partial sets of data
-components in different subtrees.
 
-- 
+- `dataComponentReflector` now accepts 'include' and 'exclude' options.  Each accepts
+  a single component identifier or Array of component identifiers.  This can be used
+  for whitelist/blacklist behavior for component persistence, but also for separate
+  reflectors (under separate redux-persist keys) to persist partial sets of data
+  components in different subtrees.
+
+- The `componentDidMount` event will be deferred until after rehydration for
+  components that are persisted via a reflector.  In addition, every component
+  now exposes an `isMounted` property that is only true after the `componentDidMount`
+  event.  Users on redux-persist v4, who do not have access to the PersistGate
+  wrapper, can instead watch the `isMounted` property to determine whether it is
+  appropriate to trigger actions (such as a `request()` on an AsyncFetchComponent). 
 
 ## v0.5.1
 30 March 2018
