@@ -6,7 +6,9 @@ import GameClock from "./GameClock";
 
 class GameBoard extends DataComponent {
     componentDidMount() {
-        this.newGame();
+        if(this.data.length === 0) {
+            this.newGame();
+        }
     }
 
     componentDidUpdate(prev, reason) {

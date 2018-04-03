@@ -38,7 +38,10 @@ function allAnnotatedActions(item) {
 }
 
 function _coreReducer(component, action) {
-    const reducers = component.classReducers();
+    const reducers = {
+        ...component.classReducers(),
+        isMounted: (state = false) => state
+    };
     const previous = Object.keys(reducers).reduce((r, k) => {
         r[k] = component[k];
         return r;
@@ -54,7 +57,13 @@ function _coreReducer(component, action) {
             result[key] = previous[key];
         }
 
-        if(action.type === ActionType.DATA_COMPONENT_REHYDRATE) {
+        if (action.type === ActionType.DATA_COMPONENT_MOUNT) {
+            if (key === 'isMounted' &&
+                action.component === component.componentIdentifier()) {
+                result.isMounted = true;
+                result[UPDATED_FLAG] = (result[UPDATED_FLAG] || previous.isMounted !== true);
+            }
+        } else if(action.type === ActionType.DATA_COMPONENT_REHYDRATE) {
             const restored = action.state[component.componentIdentifier()];
             if(restored && restored.hasOwnProperty(key)) {
                 result[key] = restored[key];
@@ -78,14 +87,16 @@ function _coreReducer(component, action) {
             throw new Error(`Illegal side-effect in reducer for ${key} in ${component.constructor.name}.  Do not modify "this" in a reducer.`);
         }
         return result;
-    }, { [UPDATED_FLAG]: false, updated_at: previous.updated_at });
+    }, { [UPDATED_FLAG]: false, updated_at: previous.updated_at, isMounted: previous.isMounted || false });
     return reduced;
 }
 
 
 
 export default class BaseDataComponent {
-    componentDidMount() {}
+    componentDidMount() {
+        this.props.dispatch({ type: ActionType.DATA_COMPONENT_MOUNT, component: this.componentIdentifier() })
+    }
     componentDidUpdate(prevInstance, reason) {}
     componentWillUpdate(nextInstance, reason) {}
     componentWillRehydrate() {}
@@ -169,6 +180,7 @@ export default class BaseDataComponent {
         if(updated) {
             if(regenerate) {
                 const newInstance = new this.constructor(this.props.dispatch, this.classOptions);
+                newInstance.isMounted = this.isMounted || false;
                 newInstance.applyData({...this.lastDataState, ...updates });
                 componentStore[this.componentIdentifier()] = newInstance;
             } else {

@@ -18,6 +18,7 @@ const REFLECT_PROP = '__@@_reflected_component_data';
 export const DEFAULT_COMPONENT_REGISTRY_STATE = {
     reducers: {},
     state: {},
+    deferrals: [],
     [REFLECT_PROP]: {},
     combinedReducers: (..._) => null
 }
@@ -67,6 +68,7 @@ export default function componentRegistryReducer(state = DEFAULT_COMPONENT_REGIS
                     [id]: instanceReducer(undefined, {})
                 }),
                 reducers,
+                deferrals: state.deferrals,
                 combinedReducers: combineReducers(reducers)
             }
         case ActionType.DATA_COMPONENT_UPDATE:
@@ -78,6 +80,11 @@ export default function componentRegistryReducer(state = DEFAULT_COMPONENT_REGIS
                 ...state,
                 state: syncReferences(action, oldState, newState),
                 [REFLECT_PROP]: compileDataReflection(newState)
+            }
+        case ActionType.DATA_COMPONENT_DEFER_MOUNT:
+            return {
+                ...state,
+                deferrals: Array.from(new Set([ ...state.deferrals, ...action.ids ]))
             }
         default:
             if(Object.keys(state.reducers).length === 0) return state;
