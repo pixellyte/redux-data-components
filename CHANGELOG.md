@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.5.3
+4 April 2018
+
+- BUG: Dispatching an empty action to a component resulted in an error.
+- Added `test_helpers/createDataComponent` to allow creation of a data component not
+backed by a component store for unit testing purposes.
+
 ## v0.5.2
 2 April 2018
 

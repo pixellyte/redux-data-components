@@ -5,6 +5,21 @@ import lifecycleMiddleware from "./lifecycleMiddleware";
 import componentRegistryReducer, {DEFAULT_COMPONENT_REGISTRY_STATE} from './componentRegistry';
 import callEventChain from "../util/callEventChain";
 
+function isMainStoreEligible(action) {
+    return true;
+}
+
+function isComponentStoreEligible(action) {
+    const excludedActionTypes = [
+        ActionType.DATA_COMPONENT_REFRESH_PROXIES,
+        ActionType.DATA_COMPONENT_UPDATE
+    ];
+    if (action && action.type && (excludedActionTypes.indexOf(action.type) >= 0 || action.type.match(/^persist\//))) {
+        return false;
+    }
+    return true;
+}
+
 function enableComponentStore(store, ...middleware) {
     const componentRegistryMiddleware = applyMiddleware(lifecycleMiddleware, ...middleware);
     const componentRegistry = createStore(
@@ -66,12 +81,8 @@ function enableComponentStore(store, ...middleware) {
     }
 
     store.dispatch = (action) => {
-        if (action.type !== ActionType.DATA_COMPONENT_UPDATE
-            && !action.type.match(/^persist\//)
-            && action.type !== ActionType.DATA_COMPONENT_REFRESH_PROXIES) {
-            componentRegistry.dispatch(action);
-        }
-        originalDispatch(action);
+        if (isComponentStoreEligible(action)) componentRegistry.dispatch(action);
+        if (isMainStoreEligible(action)) originalDispatch(action);
     }
 
     originalDispatch({type: ActionType.DATA_COMPONENT_PROBE, methods});

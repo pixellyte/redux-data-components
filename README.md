@@ -742,3 +742,30 @@ Programmatically, `(Proxy).targetComponent` will return the actual component, th
 should practically never be necessary.  In the debugger, expand the Proxy's "Handler"
 (*not* its "Target"), and note that the "target" member of the handler points to the
 actual component instance.  This exists only for purposes of browsing in the debugger.
+
+### Unit Testing Helpers
+
+Creating a whole redux store just for unit testing is often impractical.  You may use
+the included helper, `createDataComponent` to create an instance of a component that
+isn't backed by a component store.
+
+```javascript
+import MyComponent from './MyComponent';
+import createDataComponent from 'redux-data-components/test_helpers/createDataComponent';
+
+
+describe('MyComponent', () => {
+
+    it('should be creatable', () => {
+        const myComponent = createDataComponent(MyComponent, dispatch, { 
+            data: 'optional-initial-data-properties' 
+        });
+        expect(myComponent.data).toEqual('optional-initial-data-properties');
+    })
+    
+})
+```
+
+The `createDataComponent` method returns a reference attached to a new component 
+instance.  If your component contains nested references to other components, you'll 
+need to create those in the same way and pass them in the initial properties object.  
