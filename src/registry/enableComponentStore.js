@@ -14,7 +14,14 @@ function isComponentStoreEligible(action) {
         ActionType.DATA_COMPONENT_REFRESH_PROXIES,
         ActionType.DATA_COMPONENT_UPDATE
     ];
-    if (action && action.type && (excludedActionTypes.indexOf(action.type) >= 0 || action.type.match(/^persist\//))) {
+    if  (
+            action &&
+            typeof action === 'function' ||
+            (
+                action.type
+                && (excludedActionTypes.indexOf(action.type) >= 0 || action.type.match(/^persist\//))
+            )
+        ) {
         return false;
     }
     return true;
